@@ -1,0 +1,75 @@
+{
+  "name": "btl_python",
+  "displayName": "AI Coder",
+  "description": "Inline Python suggestions via your FastAPI server",
+  "version": "1.0.0",
+  "publisher": "your-name",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sagitoaz/BTL_Python.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sagitoaz/BTL_Python/issues"
+  },
+  "homepage": "https://github.com/Sagitoaz/BTL_Python#readme",
+  "engines": { "vscode": "^1.85.0" },
+  "main": "out/extension.js",
+  "activationEvents": [
+    "onLanguage:python",
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "AI Coder",
+      "properties": {
+        "aiCoder.serverUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:9000",
+          "description": "Base URL FastAPI (vd: http://127.0.0.1:9000)"
+        },
+        "aiCoder.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "API key nếu server yêu cầu. Để trống nếu không dùng."
+        },
+        "aiCoder.model": {
+          "type": "string",
+          "default": "qwen2.5-coder:7b",
+          "description": "Tên model gửi lên server."
+        },
+        "aiCoder.timeoutMs": {
+          "type": "number",
+          "default": 120000,
+          "description": "Timeout gọi API (ms)."
+        },
+        "aiCoder.enableStreaming": {
+          "type": "boolean",
+          "default": false,
+          "description": "Bật/tắt stream (SSE)."
+        }
+      }
+    },
+    "commands": [
+      { "command": "aiCoder.openSettings", "title": "AI Coder: Open Settings" },
+      { "command": "aiCoder.ping", "title": "AI Coder: Ping" }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "vscode:prepublish": "npm run compile",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^1.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "@types/vscode": "^1.103.0",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "eslint": "^9.35.0",
+    "typescript": "^5.9.2"
+  }
+}
