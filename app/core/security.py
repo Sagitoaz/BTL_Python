@@ -1,12 +1,13 @@
-from fastapi import Header, HTTPException
-from typing import Optional
+from fastapi.security import HTTPBearer
+from fastapi import Security, HTTPException
 from app.core.config import settings
 
-def require_api_key(authorization: Optional[str] = Header(default=None)):
+security = HTTPBearer(auto_error=False)
+
+def require_api_key(credentials = Security(security)):
     if not settings.API_KEY:
         return
-    if not authorization or not authorization.startswith("Bearer "):
+    if not credentials or credentials.scheme.lower() != "bearer":
         raise HTTPException(status_code=401, detail="Missing Bearer token")
-    token = authorization.split(" ", 1)[1].strip()
-    if token != settings.API_KEY:
+    if credentials.credentials != settings.API_KEY:
         raise HTTPException(status_code=403, detail="Invalid token")

@@ -28,7 +28,7 @@ def call_generate(prompt: str, max_tokens: int, temperature: float, stop, stream
             "stop": stop,
         },
     }
-    url = f"{settings.OLLAMA_URL}/api/generate"
+    url = f"{settings.OLLAMA_URL}"
     resp = SESSION.post(url, json=body, timeout=TIMEOUT, stream=stream)
     if resp.status_code >= 400:
         try:

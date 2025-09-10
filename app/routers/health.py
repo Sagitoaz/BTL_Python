@@ -7,9 +7,10 @@ router = APIRouter(prefix="", tags=["health"])
 @router.get("/health")
 def health():
     try:
-        r = SESSION.get(f"{settings.OLLAMA_URL}/api/tags", timeout=10)
+        r = SESSION.get("http://127.0.0.1:11434/api/tags", timeout=10)
         ok = r.status_code == 200
         models = [m.get("name") for m in (r.json().get("models", []) if ok else [])]
+    
     except Exception:
         ok, models = False, []
     return {"status": "ok" if ok else "degraded", "model": settings.MODEL, "available_models": models}
@@ -17,7 +18,9 @@ def health():
 @router.get("/models")
 def models():
     try:
-        r = SESSION.get(f"{settings.OLLAMA_URL}/api/tags", timeout=10)
+        #print(f"{settings.OLLAMA_URL}")
+        
+        r = SESSION.get("http://127.0.0.1:11434/api/tags", timeout=10)
         r.raise_for_status()
         return r.json()
     except Exception as e:
