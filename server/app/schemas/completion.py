@@ -7,8 +7,8 @@ class CompleteRequest(BaseModel):
     prefix: str = ""
     suffix: str = ""
     language: str = "python"
-    max_tokens: int = Field(256, ge=1, le=512)
-    temperature: float = Field(0.2, ge=0.0, le=1.0)
+    max_tokens: int = 256#Field(256, ge=1, le=512)
+    temperature: float = 0.2#Field(0.2, ge=0.0, le=1.0)
     stop: Optional[List[str]] = None
 
     @field_validator("language")
