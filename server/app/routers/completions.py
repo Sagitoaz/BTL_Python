@@ -10,7 +10,7 @@ router = APIRouter(prefix="", tags=["completion"])
 @router.post("/complete", response_model=CompleteResponse, dependencies=[Depends(require_api_key)])
 def complete(req: CompleteRequest):
     req_id = new_request_id()
-    prompt = build_prompt(req.prefix, req.suffix, req.language)
+    prompt = build_prompt(req)
     stops = (req.stop or []) + DEFAULT_STOPS
     try:
         r = call_generate(prompt, req.max_tokens, req.temperature, stops, stream=False)
