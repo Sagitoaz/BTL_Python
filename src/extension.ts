@@ -1,32 +1,26 @@
-// src/extension.ts
 import * as vscode from 'vscode';
+import { InlineProvider } from './inlineProvider';
 
-/**
- * VS Code sẽ gọi hàm này khi extension được kích hoạt.
- * Kích hoạt xảy ra theo "activationEvents" trong package.json
- * (vd: mở file Python, hoặc sau khi VS Code khởi động xong).
- */
 export function activate(context: vscode.ExtensionContext) {
-  // Tạo kênh log để bạn xem nhật ký ở View → Output → AI Coder
-  const log = vscode.window.createOutputChannel('AI Coder');
-  log.appendLine('AI Coder activated');
-  context.subscriptions.push(log);
+  const cfg = vscode.workspace.getConfiguration('btl');
+  const serverUrl = cfg.get<string>('serverUrl') ?? process.env.SERVER_URL ?? 'http://localhost:9000';
+  const apiKey = cfg.get<string>('apiKey') ?? process.env.API_KEY;
 
-  // Ví dụ 1: lệnh mở trang Settings của extension (tiện để cấu hình)
-  const openSettings = vscode.commands.registerCommand('aiCoder.openSettings', async () => {
-    await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:your-name.ai-coder');
-  });
-  context.subscriptions.push(openSettings);
 
-  // Ví dụ 2: lệnh ping để test extension sống
-  const ping = vscode.commands.registerCommand('aiCoder.ping', () => {
-    vscode.window.showInformationMessage('AI Coder is alive!');
-  });
-  context.subscriptions.push(ping);
+  const provider = new InlineProvider(serverUrl, apiKey);
+
+  // áp cho Python trước; muốn all languages thì dùng: { pattern: "**/*" }
+  const selector: vscode.DocumentSelector = [{ language: 'python', scheme: 'file' }, { language: 'python', scheme: 'untitled' }];
+
+  const disposable = vscode.languages.registerInlineCompletionItemProvider(selector, provider);
+  context.subscriptions.push(disposable);
+
+  // (tùy chọn) lệnh bật/tắt gợi ý nhanh
+  context.subscriptions.push(
+    vscode.commands.registerCommand('btl.inlineSuggest', async () => {
+      await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
+    })
+  );
 }
 
-/**
- * Được gọi khi extension bị unload (đóng VS Code…).
- * Nếu bạn mở socket/process thì dọn ở đây.
- */
-export function deactivate() {}
+export function deactivate() { }

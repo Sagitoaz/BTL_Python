@@ -13,7 +13,9 @@
     "url": "https://github.com/Sagitoaz/BTL_Python/issues"
   },
   "homepage": "https://github.com/Sagitoaz/BTL_Python#readme",
-  "engines": { "vscode": "^1.85.0" },
+  "engines": {
+    "vscode": "^1.103.0"
+  },
   "main": "out/extension.js",
   "activationEvents": [
     "onLanguage:python",
@@ -21,38 +23,35 @@
   ],
   "contributes": {
     "configuration": {
-      "title": "AI Coder",
+      "type": "object",
+      "title": "BTL Settings",
       "properties": {
-        "aiCoder.serverUrl": {
+        "btl.pythonPath": {
           "type": "string",
-          "default": "http://127.0.0.1:9000",
-          "description": "Base URL FastAPI (vd: http://127.0.0.1:9000)"
+          "default": "python",
+          "description": "Đường dẫn Python (trong env AIProPTIT)."
         },
-        "aiCoder.apiKey": {
+        "btl.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:9000",
+          "description": "SERVER_URL cho FastAPI."
+        },
+        "btl.apiKey": {
           "type": "string",
           "default": "",
-          "markdownDescription": "API key nếu server yêu cầu. Để trống nếu không dùng."
-        },
-        "aiCoder.model": {
-          "type": "string",
-          "default": "qwen2.5-coder:7b",
-          "description": "Tên model gửi lên server."
-        },
-        "aiCoder.timeoutMs": {
-          "type": "number",
-          "default": 120000,
-          "description": "Timeout gọi API (ms)."
-        },
-        "aiCoder.enableStreaming": {
-          "type": "boolean",
-          "default": false,
-          "description": "Bật/tắt stream (SSE)."
+          "description": "API_KEY cho FastAPI."
         }
       }
     },
     "commands": [
-      { "command": "aiCoder.openSettings", "title": "AI Coder: Open Settings" },
-      { "command": "aiCoder.ping", "title": "AI Coder: Ping" }
+      {
+        "command": "btl.inlineSuggest",
+        "title": "BTL: Trigger Inline Suggest"
+      },
+      {
+        "command": "btl.testCompletion",
+        "title": "BTL: Test Completion"
+      }
     ]
   },
   "scripts": {
