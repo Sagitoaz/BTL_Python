@@ -18,7 +18,7 @@ def health():
 @router.get("/models")
 def models():
     try:
-        print(f"{settings.OLLAMA_URL}")
+        
         
         r = SESSION.get(f"{settings.OLLAMA_URL}/api/tags", timeout=10)
         r.raise_for_status()
