@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     API_KEY: str = "5conmeo"
     TIMEOUT_SECONDS: int = 120
     ALLOW_ORIGINS: str = "*"
+    HEADERS_MIDDLEWARE: str = "X-Request-ID"
+    REQUEST_ID : str = "request_id"
     class Config:
         env_file = ".env"
         case_sensitive = False

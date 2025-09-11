@@ -6,7 +6,7 @@ from fastapi import Request
 from app.core.security import require_api_key
 from app.schemas.completion import CompleteRequest, CompleteResponse, DEFAULT_STOPS
 from app.services.ollama import build_prompt, call_generate, new_request_id
-
+from app.core.config import settings
 router = APIRouter(prefix="", tags=["completion"])
 logger = logging.getLogger("completion")
 @router.post("/complete", response_model=CompleteResponse, dependencies=[Depends(require_api_key)])
@@ -42,6 +42,6 @@ def complete_stream(req: CompleteRequest, request: Request):
                 chunk = line
             yield f"data: {json.dumps({'delta': chunk})}\n\n"
         yield "event: done\ndata: {}\n\n"
-    rid = getattr(request.state, "request_id", "-")
-    logger.info("Received /complete", extra={"request_id": rid})
+    rid = getattr(request.state, settings.REQUEST_ID, "-")
+    logger.info("Received /complete", extra={ settings.REQUEST_ID: rid})
     return StreamingResponse(gen(), media_type="text/event-stream")
