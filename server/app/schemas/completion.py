@@ -1,21 +1,78 @@
-from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional
+from pydantic import BaseModel, Field, field_validator, model_validator
+from typing import List, Optional, Literal
 
-DEFAULT_STOPS = ["\n\n```", "\n\n##"]
+DEFAULT_STOPS_PY = ["\n\n```", "\n\n##", "\n\n# ", "\n\n\"\"\"", "\n\n'''", "```"]  
+DEFAULT_TEMPERATURE = 0.2
+DEFAULT_MAX_TOKENS = 256
+MAX_SIDE_CHARS = 4000
+
+def _normalize_newlines(s: str) -> str:
+    # Windows CRLF -> LF, an toàn cho tìm '\n'
+    return s.replace("\r\n", "\n")
+
+# cắt phần prefix đỡ bị phân mảnh
+def _smart_trim_prefix(prefix: str, limit: int) -> str:
+    prefix = _normalize_newlines(prefix)
+    if len(prefix) <= limit:
+        return prefix
+    start = len(prefix) - limit
+    nl = prefix.find('\n', start)
+    if nl != -1 and nl + 1 < len(prefix):
+        return prefix[nl + 1:]
+    return prefix[-limit:]
+#cắt phần suffix đỡ bị phân mảnh
+
+def _smart_trim_suffix(suffix: str, limit: int) -> str:
+    suffix = _normalize_newlines(suffix)
+    if len(suffix) <= limit:
+        return suffix
+    head = suffix[:limit]
+    nl = head.rfind('\n')
+    if nl != -1:
+        return head[:nl]
+    return head
 
 class CompleteRequest(BaseModel):
-    prefix: str = ""
-    suffix: str = ""
-    language: str = "python"
-    max_tokens: int = Field(256, ge=1, le=512)
-    temperature: float = Field(0.2, ge=0.0, le=1.0)
+    prefix: str = Field("", description="Code before cursor")
+    suffix: str = Field("", description="Code after cursor")
+    language: Literal["python"] = "python"
+    max_tokens: int = Field(DEFAULT_MAX_TOKENS, ge=1, le=512)
+    temperature: float = Field(DEFAULT_TEMPERATURE, ge=0.0, le=1.0)
     stop: Optional[List[str]] = None
 
-    @field_validator("language")
+    code_only: bool = True
+    allow_comments: bool = False
+
+    @field_validator("stop", mode="before")
     @classmethod
-    def normalize_lang(cls, v: str) -> str:
-        return (v or "").strip().lower()
+    def sanitize_stops(cls, v: Optional[List[str]]):
+        # Phân biệt None vs [] nếu sau này bạn muốn tắt stop hoàn toàn
+        if v is None:
+            return None
+        if isinstance(v, list) and len(v) == 0:
+            return []  # giữ nguyên: cố ý không có stop
+        seen, out = set(), []
+        for s in (s.strip() for s in v if s is not None):
+            if s and s not in seen:
+                seen.add(s)
+                out.append(s)
+        return out or []
+
+    @model_validator(mode="after")
+    def apply_defaults_and_trim(self):
+        # Chỉ gán default khi client không gửi (None); nếu gửi [] thì tôn trọng
+        if self.stop is None:
+            self.stop = DEFAULT_STOPS_PY.copy()
+
+        self.prefix = _smart_trim_prefix(self.prefix, MAX_SIDE_CHARS)
+        self.suffix = _smart_trim_suffix(self.suffix, MAX_SIDE_CHARS)
+        return self
 
 class CompleteResponse(BaseModel):
     request_id: str
     completion: str
+    # (meta có thể mở lại sau này)
+    # model: Optional[str] = None
+    # tokens_in: Optional[int] = None
+    # tokens_out: Optional[int] = None
+    # latency_ms: Optional[float] = None
