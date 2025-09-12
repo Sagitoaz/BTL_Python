@@ -1,36 +1,36 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import List, Optional, Literal
 
-DEFAULT_STOPS_PY = ["\n\n```", "\n\n##", "\n\n# ", "\n\n\"\"\"", "\n\n'''", "```"]  
+DEFAULT_STOPS_PY = ["\n\n```", "\n\n##", "\n\n# ", "\n\n\"\"\"", "\n\n'''"]  
 DEFAULT_TEMPERATURE = 0.2
 DEFAULT_MAX_TOKENS = 256
 MAX_SIDE_CHARS = 4000
 
-def _normalize_newlines(s: str) -> str:
-    # Windows CRLF -> LF, an toàn cho tìm '\n'
-    return s.replace("\r\n", "\n")
+# def _normalize_newlines(s: str) -> str:
+#     # Windows CRLF -> LF, an toàn cho tìm '\n'
+#     return s.replace("\r\n", "\n")
 
-# cắt phần prefix đỡ bị phân mảnh
-def _smart_trim_prefix(prefix: str, limit: int) -> str:
-    prefix = _normalize_newlines(prefix)
-    if len(prefix) <= limit:
-        return prefix
-    start = len(prefix) - limit
-    nl = prefix.find('\n', start)
-    if nl != -1 and nl + 1 < len(prefix):
-        return prefix[nl + 1:]
-    return prefix[-limit:]
-#cắt phần suffix đỡ bị phân mảnh
+# # cắt phần prefix đỡ bị phân mảnh
+# def _smart_trim_prefix(prefix: str, limit: int) -> str:
+#     prefix = _normalize_newlines(prefix)
+#     if len(prefix) <= limit:
+#         return prefix
+#     start = len(prefix) - limit
+#     nl = prefix.find('\n', start)
+#     if nl != -1 and nl + 1 < len(prefix):
+#         return prefix[nl + 1:]
+#     return prefix[-limit:]
+# #cắt phần suffix đỡ bị phân mảnh
 
-def _smart_trim_suffix(suffix: str, limit: int) -> str:
-    suffix = _normalize_newlines(suffix)
-    if len(suffix) <= limit:
-        return suffix
-    head = suffix[:limit]
-    nl = head.rfind('\n')
-    if nl != -1:
-        return head[:nl]
-    return head
+# def _smart_trim_suffix(suffix: str, limit: int) -> str:
+#     suffix = _normalize_newlines(suffix)
+#     if len(suffix) <= limit:
+#         return suffix
+#     head = suffix[:limit]
+#     nl = head.rfind('\n')
+#     if nl != -1:
+#         return head[:nl]
+#     return head
 
 class CompleteRequest(BaseModel):
     prefix: str = Field("", description="Code before cursor")
@@ -64,8 +64,8 @@ class CompleteRequest(BaseModel):
         if self.stop is None:
             self.stop = DEFAULT_STOPS_PY.copy()
 
-        self.prefix = _smart_trim_prefix(self.prefix, MAX_SIDE_CHARS)
-        self.suffix = _smart_trim_suffix(self.suffix, MAX_SIDE_CHARS)
+        # self.prefix = _smart_trim_prefix(self.prefix, MAX_SIDE_CHARS)
+        # self.suffix = _smart_trim_suffix(self.suffix, MAX_SIDE_CHARS)
         return self
 
 class CompleteResponse(BaseModel):

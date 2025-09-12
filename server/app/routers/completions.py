@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi import Request
 from app.core.security import require_api_key
-from app.schemas.completion import CompleteRequest, CompleteResponse, DEFAULT_STOPS
+from app.schemas.completion import CompleteRequest, CompleteResponse, DEFAULT_STOPS_PY
 from app.services.ollama import build_prompt, call_generate, new_request_id
 from app.core.config import settings
 router = APIRouter(prefix="", tags=["completion"])
@@ -13,7 +13,7 @@ logger = logging.getLogger("completion")
 def complete(req: CompleteRequest):
     req_id = new_request_id()
     prompt = build_prompt(req)
-    stops = (req.stop or []) + DEFAULT_STOPS
+    stops = (req.stop or []) + DEFAULT_STOPS_PY
     try:
         r = call_generate(prompt, req.max_tokens, req.temperature, stops, stream=False)
         data = r.json()
