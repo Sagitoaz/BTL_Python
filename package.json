@@ -40,6 +40,17 @@
           "type": "string",
           "default": "",
           "description": "API_KEY cho FastAPI."
+        },
+        "btl.enableStreaming": {
+          "type": "boolean",
+          "default": false,
+          "description": "Bật stream SSE (/complete_stream) để hiển thị gợi ý theo thời gian thực."
+        },
+        "btl.timeoutMs": {
+          "type": "number",
+          "default": 8000,
+          "minimum": 1000,
+          "description": "Timeout request (ms) khi gọi FastAPI."
         }
       }
     },
@@ -65,7 +76,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.3.1",
-    "@types/vscode": "^1.103.0",
+    "@types/vscode": "^1.104.0",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
     "eslint": "^9.35.0",
