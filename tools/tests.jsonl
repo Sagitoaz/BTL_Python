@@ -1,0 +1,36 @@
+{"id":"py_add_simple","language":"python","prefix":"def add(a, b):\n    ","suffix":"\n"}
+{"id":"py_sub_indent","language":"python","prefix":"def sub(a: int, b: int) -> int:\n    ","suffix":"\n"}
+{"id":"py_mul_nextline","language":"python","prefix":"def mul(a, b):","suffix":"\n"}
+{"id":"py_class_method","language":"python","prefix":"class Token:\n    def text(self) -> str:\n        ","suffix":"\n"}
+{"id":"py_property","language":"python","prefix":"class User:\n    def __init__(self, name: str):\n        self._name = name\n\n    @property\n    def name(self) -> str:\n        ","suffix":"\n"}
+{"id":"py_decorator","language":"python","prefix":"def timeit(fn):\n    def wrap(*args, **kwargs):\n        return fn(*args, **kwargs)\n    return wrap\n\n@timeit\ndef foo(x):\n    ","suffix":"\n"}
+{"id":"py_async","language":"python","prefix":"import asyncio\n\nasync def fetch(session, url: str):\n    ","suffix":"\n"}
+{"id":"py_try_except","language":"python","prefix":"def to_int(s: str) -> int:\n    try:\n        ","suffix":"\n"}
+{"id":"py_context_manager","language":"python","prefix":"def read_first_line(path: str) -> str:\n    with open(path, 'r', encoding='utf-8') as f:\n        ","suffix":"\n"}
+{"id":"py_list_comp","language":"python","prefix":"def squares(n: int):\n    ","suffix":"\n"}
+{"id":"py_docstring","language":"python","prefix":"def clamp(x: float, lo: float, hi: float) -> float:\n    \"\"\"","suffix":"\"\"\"\n"}
+{"id":"py_fstring","language":"python","prefix":"def greet(name: str) -> str:\n    ","suffix":"\n"}
+{"id":"py_regex_import","language":"python","prefix":"import re\n\ndef is_email(s: str) -> bool:\n    ","suffix":"\n"}
+{"id":"py_edge_empty_suffix","language":"python","prefix":"def factorial(n:int):\n    if n <= 1:\n        ","suffix":""}
+{"id":"py_suffix_brace_close","language":"python","prefix":"def two_sum(nums, target):\n    for i,a in enumerate(nums):\n        for j,b in enumerate(nums[i+1:], i+1):\n            if a + b == target:\n                ","suffix":"\n    return None\n"}
+{"id":"py_indent_align","language":"python","prefix":"def count_even(nums):\n    count = 0\n    for x in nums:\n        ","suffix":"\n"}
+{"id":"py_class_init","language":"python","prefix":"class Point:\n    def __init__(self, x: float, y: float):\n        ","suffix":"\n"}
+{"id":"py_property_setter","language":"python","prefix":"class Account:\n    def __init__(self):\n        self._balance = 0\n\n    @property\n    def balance(self):\n        return self._balance\n\n    @balance.setter\n    def balance(self, value):\n        ","suffix":"\n"}
+{"id":"py_generator","language":"python","prefix":"def gen(n):\n    i = 0\n    ","suffix":"\n"}
+{"id":"py_type_hint_edge","language":"python","prefix":"def invert(m: dict[str, int]) -> dict[int, str]:\n    ","suffix":"\n"}
+{"id":"py_codefence_noise","language":"python","prefix":"# return only code, no fences\n\ndef hello():\n    ","suffix":"\n"}
+{"id":"ts_arrow_basic","language":"typescript","prefix":"export const twoSum = (nums: number[], target: number) => {\n  ","suffix":"\n}\n"}
+{"id":"ts_async_await","language":"typescript","prefix":"export async function getJson(url: string) {\n  ","suffix":"\n}\n"}
+{"id":"ts_interface_impl","language":"typescript","prefix":"interface User { id: number; name: string }\n\nexport function names(xs: User[]): string[] {\n  ","suffix":"\n}\n"}
+{"id":"ts_class_method","language":"typescript","prefix":"class Counter {\n  private n = 0;\n  inc() {\n    ","suffix":"\n  }\n}\n"}
+{"id":"ts_generic","language":"typescript","prefix":"export function head<T>(arr: T[]): T | undefined {\n  ","suffix":"\n}\n"}
+{"id":"js_unclosed_block","language":"javascript","prefix":"function max(a, b) {\n  ","suffix":""}
+{"id":"js_array_map","language":"javascript","prefix":"const xs = [1,2,3];\nconst ys = xs.map(x => ","suffix":"\n"}
+{"id":"js_module_export","language":"javascript","prefix":"export default function repeat(s, n) {\n  ","suffix":"\n}\n"}
+{"id":"js_try_catch","language":"javascript","prefix":"function parseJSON(s) {\n  try:\n    ","suffix":"\n}\n"}
+{"id":"py_suffix_tight_match","language":"python","prefix":"def join_paths(a, b):\n    ","suffix":"\n# usage below\np = join_paths('a','b')\n"}
+{"id":"py_unicode_id","language":"python","prefix":"def diện_tích_hình_vuông(cạnh: float) -> float:\n    ","suffix":"\n"}
+{"id":"py_dataclass","language":"python","prefix":"from dataclasses import dataclass\n\n@dataclass\nclass Item:\n    name: str\n    price: float\n\n","suffix":"\n"}
+{"id":"py_match_case","language":"python","prefix":"def http_status_text(code: int) -> str:\n    match code:\n        ","suffix":"\n"}
+{"id":"ts_narrowing","language":"typescript","prefix":"function isNumber(x: unknown): x is number {\n  ","suffix":"\n}\n"}
+{"id":"py_context_suffix_close","language":"python","prefix":"for i in range(3):\n    ","suffix":"\nprint('done')\n"}
