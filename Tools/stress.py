@@ -7,7 +7,7 @@
 # - Hỗ trợ --timeout / --endpoint / --payload-file
 # - Đọc mặc định SERVER_URL, API_KEY từ biến môi trường
 # ------------------------------------------------------------
-
+import httpx
 import os
 import asyncio
 import argparse
@@ -15,8 +15,6 @@ import time
 import json
 from collections import Counter
 from typing import Any, Dict, List, Tuple, Union
-
-import httpx
 
 ErrorItem = Tuple[Union[int, str], float]  # (status_code_or_message, elapsed_sec)
 
@@ -26,12 +24,7 @@ def load_payload(payload_file: str | None) -> Dict[str, Any]:
         with open(payload_file, "r", encoding="utf-8") as f:
             return json.load(f)
     # Payload tối giản để loại trừ yếu tố prompt nặng khi debug kết nối
-    return {
-        "prefix": "x",
-        "suffix": "",
-        "language": "python",
-        "max_tokens": 8
-    }
+    return {"prefix": "x", "suffix": "", "language": "python", "max_tokens": 8}
 
 
 def percentile(sorted_list: List[float], p: int | float) -> float | None:
@@ -100,7 +93,11 @@ def classify_error(err: ErrorItem) -> str:
         return "TIMEOUT"
     if "refused" in msg or "10061" in msg or "connect" in msg:
         return "CONNECTION"
-    if "name or service not known" in msg or "getaddrinfo failed" in msg or "dns" in msg:
+    if (
+        "name or service not known" in msg
+        or "getaddrinfo failed" in msg
+        or "dns" in msg
+    ):
         return "DNS"
     return "OTHER"
 
@@ -138,14 +135,32 @@ async def stress_test(
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Simple stress tester for code-completion API")
-    p.add_argument("--server", default=os.getenv("SERVER_URL", "http://100.109.118.90:9000"), help="VD: http://host:9000 (mặc định lấy từ ENV SERVER_URL)")
-    p.add_argument("--endpoint", default="/complete", help="Endpoint cần test, ví dụ: /complete")
-    p.add_argument("--api-key", default=os.getenv("API_KEY", "5conmeo"), help="Bearer token (mặc định lấy từ ENV API_KEY)")
+    p = argparse.ArgumentParser(
+        description="Simple stress tester for code-completion API"
+    )
+    p.add_argument(
+        "--server",
+        default=os.getenv("SERVER_URL", "http://100.109.118.90:9000"),
+        help="VD: http://host:9000 (mặc định lấy từ ENV SERVER_URL)",
+    )
+    p.add_argument(
+        "--endpoint", default="/complete", help="Endpoint cần test, ví dụ: /complete"
+    )
+    p.add_argument(
+        "--api-key",
+        default=os.getenv("API_KEY", "5conmeo"),
+        help="Bearer token (mặc định lấy từ ENV API_KEY)",
+    )
     p.add_argument("--concurrency", type=int, default=10, help="Số request song song")
     p.add_argument("--requests", type=int, default=100, help="Tổng số request")
-    p.add_argument("--timeout", type=float, default=10.0, help="Timeout mỗi request (giây)")
-    p.add_argument("--payload-file", default="", help="Đường dẫn file JSON payload để override payload mặc định")
+    p.add_argument(
+        "--timeout", type=float, default=10.0, help="Timeout mỗi request (giây)"
+    )
+    p.add_argument(
+        "--payload-file",
+        default="",
+        help="Đường dẫn file JSON payload để override payload mặc định",
+    )
     return p
 
 
@@ -154,7 +169,9 @@ def main():
     args = parser.parse_args()
 
     if not args.server:
-        raise SystemExit("Thiếu --server và không thấy SERVER_URL trong ENV. Hãy truyền --server hoặc set ENV SERVER_URL.")
+        raise SystemExit(
+            "Thiếu --server và không thấy SERVER_URL trong ENV. Hãy truyền --server hoặc set ENV SERVER_URL."
+        )
 
     payload = load_payload(args.payload_file or None)
 
