@@ -1,0 +1,1 @@
+python tools\prompt_eval.py --server-url http://100.109.118.90:9000/ --api-key 5conmeo --input tools\tests.jsonl --out tools\results.csv

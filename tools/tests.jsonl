@@ -1,0 +1,30 @@
+{"name":"py-add-basic","language":"python","prefix":"def add(a, b):\n    ","suffix":"\n","max_tokens":80,"temperature":0.2}
+{"name":"py-class-init-partial","language":"python","prefix":"class Cache:\n    def __init__(self","suffix":"\n","max_tokens":120,"temperature":0.2}
+{"name":"py-try-except-open","language":"python","prefix":"def load_json(path):\n    try:\n        with open(path) as f:\n            data = json.load(f)\n            ","suffix":"\n","max_tokens":120,"temperature":0.2}
+{"name":"py-decorator-func","language":"python","prefix":"def retry(n):\n    def deco(fn):\n        def wrapper(*args, **kwargs):\n            ","suffix":"\n        return wrapper\n    return deco\n\n@retry(3)\ndef fetch(url):\n    ","max_tokens":160,"temperature":0.2}
+{"name":"py-context-manager","language":"python","prefix":"class Timer:\n    def __enter__(self):\n        self.start = time.time()\n        ","suffix":"\n    def __exit__(self, exc_type, exc, tb):\n        ","max_tokens":140,"temperature":0.2}
+{"name":"py-async-await","language":"python","prefix":"async def get_user(uid: str):\n    ","suffix":"\n","max_tokens":120,"temperature":0.2}
+{"name":"py-generator","language":"python","prefix":"def walk_lines(fp):\n    for line in fp:\n        ","suffix":"\n","max_tokens":100,"temperature":0.2}
+{"name":"py-dataclass","language":"python","prefix":"from dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: float\n    y: float\n\n","suffix":"\n","max_tokens":100,"temperature":0.2}
+{"name":"py-type-hints","language":"python","prefix":"from typing import List, Dict, Optional\n\ndef group_by_key(items: List[Dict[str, str]], key: str) -> Dict[str, List[Dict[str, str]]]:\n    result: Dict[str, List[Dict[str, str]]] = {}\n    ","suffix":"\n","max_tokens":140,"temperature":0.2}
+{"name":"py-open-string","language":"python","prefix":"def render_template(ctx: dict) -> str:\n    s = f\"<div>name: {ctx['name']}, age: ","suffix":"</div>\"\n","max_tokens":80,"temperature":0.2}
+{"name":"py-with-open","language":"python","prefix":"def save_lines(path, lines):\n    with open(path, 'w', encoding='utf-8') as f:\n        ","suffix":"\n","max_tokens":100,"temperature":0.2}
+{"name":"py-list-comp","language":"python","prefix":"def squares(n):\n    return [","suffix":" for i in range(n)]\n","max_tokens":60,"temperature":0.2}
+{"name":"py-if-main","language":"python","prefix":"def main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument('--path')\n    args = parser.parse_args()\n    ","suffix":"\n\nif __name__ == '__main__':\n    main()\n","max_tokens":120,"temperature":0.2}
+{"name":"py-logger-setup","language":"python","prefix":"import logging\n\ndef setup_logger(name: str) -> logging.Logger:\n    logger = logging.getLogger(name)\n    if not logger.handlers:\n        ","suffix":"\n    return logger\n","max_tokens":100,"temperature":0.2}
+{"name":"py-re-regex","language":"python","prefix":"import re\n\ndef extract_ids(text: str):\n    pat = re.compile(r\"id=(\\d+)\")\n    ","suffix":"\n","max_tokens":100,"temperature":0.2}
+{"name":"py-sorted-key","language":"python","prefix":"def top_k(items, k):\n    ","suffix":"\n","max_tokens":80,"temperature":0.2}
+{"name":"py-ctx-manager-usage","language":"python","prefix":"def profile_fn(fn, *args, **kwargs):\n    with Timer() as t:\n        ","suffix":"\n    return t\n","max_tokens":100,"temperature":0.2}
+{"name":"py-async-context","language":"python","prefix":"class AsyncSession:\n    async def __aenter__(self):\n        ","suffix":"\n    async def __aexit__(self, exc_type, exc, tb):\n        ","max_tokens":140,"temperature":0.2}
+{"name":"py-multi-line-indent","language":"python","prefix":"def format_items(items):\n    parts = []\n    for it in items:\n        parts.append(\n            ","suffix":"\n        )\n    return \"\".join(parts)\n","max_tokens":120,"temperature":0.2}
+{"name":"py-partial-class-method","language":"python","prefix":"class Store:\n    def __init__(self):\n        self._data = {}\n    def get(self, key, default=None):\n        ","suffix":"\n","max_tokens":100,"temperature":0.2}
+{"name":"ts-two-sum","language":"typescript","prefix":"export function twoSum(nums: number[], target: number) {","suffix":"\n}\n","max_tokens":120,"temperature":0.2}
+{"name":"ts-interface-impl","language":"typescript","prefix":"interface User { id: string; name: string; age?: number }\n\nexport function greet(u: User) {","suffix":"\n}\n","max_tokens":100,"temperature":0.2}
+{"name":"ts-async-fetch","language":"typescript","prefix":"export async function fetchJson(url: string) {","suffix":"\n}\n","max_tokens":120,"temperature":0.2}
+{"name":"ts-class-service","language":"typescript","prefix":"export class ApiService {\n  constructor(private base: string) {}\n  async get(path: string) {\n    ","suffix":"\n  }\n}\n","max_tokens":140,"temperature":0.2}
+{"name":"ts-generic-reducer","language":"typescript","prefix":"export function groupBy<T, K extends string | number>(arr: T[], key: (t: T) => K) {","suffix":"\n}\n","max_tokens":140,"temperature":0.2}
+{"name":"ts-partial-try-catch","language":"typescript","prefix":"export function parseMaybeInt(s: string): number | null {\n  try {\n    ","suffix":"\n}\n","max_tokens":100,"temperature":0.2}
+{"name":"ts-promise-chain","language":"typescript","prefix":"export function readText(file: File): Promise<string> {\n  return new Promise((resolve, reject) => {\n    const fr = new FileReader()\n    ","suffix":"\n  })\n}\n","max_tokens":140,"temperature":0.2}
+{"name":"ts-node-fs","language":"typescript","prefix":"import { promises as fs } from 'fs'\n\nexport async function load(path: string) {","suffix":"\n}\n","max_tokens":120,"temperature":0.2}
+{"name":"ts-react-fragment","language":"typescript","prefix":"type Props = { items: string[] }\nexport function List({ items }: Props) {","suffix":"\n}\n","max_tokens":120,"temperature":0.2}
+{"name":"ts-guard","language":"typescript","prefix":"function isNonEmpty(s: unknown): s is string {\n  ","suffix":"\n}\n","max_tokens":80,"temperature":0.2}
