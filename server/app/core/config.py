@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     ALLOW_ORIGINS: str = "*"
     HEADERS_MIDDLEWARE: str = "X-Request-ID"
     REQUEST_ID : str = "request_id"
+    POSTPROCESS_ENABLED: bool = True # hậu thêm vào
     class Config:
         env_file = ".env"
         case_sensitive = False
