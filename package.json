@@ -1,0 +1,85 @@
+{
+  "name": "btl_python",
+  "displayName": "AI Coder",
+  "description": "Inline Python suggestions via your FastAPI server",
+  "version": "1.0.0",
+  "publisher": "your-name",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sagitoaz/BTL_Python.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sagitoaz/BTL_Python/issues"
+  },
+  "homepage": "https://github.com/Sagitoaz/BTL_Python#readme",
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "main": "out/extension.js",
+  "activationEvents": [
+    "onLanguage:python",
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "BTL Settings",
+      "properties": {
+        "btl.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Đường dẫn Python (trong env AIProPTIT)."
+        },
+        "btl.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:9000",
+          "description": "SERVER_URL cho FastAPI."
+        },
+        "btl.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API_KEY cho FastAPI."
+        },
+        "btl.enableStreaming": {
+          "type": "boolean",
+          "default": false,
+          "description": "Bật stream SSE (/complete_stream) để hiển thị gợi ý theo thời gian thực."
+        },
+        "btl.timeoutMs": {
+          "type": "number",
+          "default": 8000,
+          "minimum": 1000,
+          "description": "Timeout request (ms) khi gọi FastAPI."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "btl.inlineSuggest",
+        "title": "BTL: Trigger Inline Suggest"
+      },
+      {
+        "command": "btl.testCompletion",
+        "title": "BTL: Test Completion"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "vscode:prepublish": "npm run compile",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^1.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "@types/vscode": "^1.104.0",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "eslint": "^9.35.0",
+    "typescript": "^5.9.2"
+  }
+}
