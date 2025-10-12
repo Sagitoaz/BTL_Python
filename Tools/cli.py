@@ -1,17 +1,25 @@
 # tools/cli.py
-import os, sys, json, argparse, re, time
+import os
+import sys
+import json
+import argparse
+import re
+import time
 import requests
 
 DEFAULT_SERVER = os.getenv("SERVER_URL", "http://127.0.0.1:9000")
 DEFAULT_API_KEY = os.getenv("API_KEY", "")
 
+
 def read_text(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
+
 def strip_md_fence(text: str) -> str:
     m = re.search(r"```(?:\w+)?\n(.*?)```", text, re.S)
     return m.group(1) if m else text
+
 
 def build_headers(api_key: str, accept: str = "application/json", extra=None) -> dict:
     h = {"Content-Type": "application/json", "Accept": accept}
@@ -22,6 +30,7 @@ def build_headers(api_key: str, accept: str = "application/json", extra=None) ->
             k, v = kv.split(":", 1)
             h[k.strip()] = v.strip()
     return h
+
 
 def coalesce_completion(obj: dict) -> str:
     if not isinstance(obj, dict):
@@ -34,13 +43,18 @@ def coalesce_completion(obj: dict) -> str:
         or ""
     )
 
-def post_complete(server: str, api_key: str, payload: dict, timeout: int, retries=0, retry_wait=0.5) -> str:
+
+def post_complete(
+    server: str, api_key: str, payload: dict, timeout: int, retries=0, retry_wait=0.5
+) -> str:
     url = server.rstrip("/") + "/complete"
     headers = build_headers(api_key, accept="application/json")
     last_err = None
     for i in range(retries + 1):
         try:
-            with requests.post(url, headers=headers, data=json.dumps(payload), timeout=timeout) as r:
+            with requests.post(
+                url, headers=headers, data=json.dumps(payload), timeout=timeout
+            ) as r:
                 if r.status_code != 200:
                     raise RuntimeError(f"[HTTP {r.status_code}] {r.text}")
                 try:
@@ -50,9 +64,10 @@ def post_complete(server: str, api_key: str, payload: dict, timeout: int, retrie
         except Exception as e:
             last_err = e
             if i < retries:
-                time.sleep(retry_wait * (2 ** i))
+                time.sleep(retry_wait * (2**i))
             else:
                 raise SystemExit(str(last_err))
+
 
 def stream_complete(server: str, api_key: str, payload: dict, timeout: int):
     base = server.rstrip("/")
@@ -61,7 +76,13 @@ def stream_complete(server: str, api_key: str, payload: dict, timeout: int):
     url_sse = base + "/complete_stream"
     headers_sse = build_headers(api_key, accept="text/event-stream")
     try:
-        with requests.post(url_sse, headers=headers_sse, data=json.dumps(payload), stream=True, timeout=timeout) as r:
+        with requests.post(
+            url_sse,
+            headers=headers_sse,
+            data=json.dumps(payload),
+            stream=True,
+            timeout=timeout,
+        ) as r:
             if r.status_code == 200:
                 current_event = None
                 for line in r.iter_lines(decode_unicode=True):
@@ -83,7 +104,9 @@ def stream_complete(server: str, api_key: str, payload: dict, timeout: int):
                             obj.get("delta")
                             or obj.get("text")
                             or obj.get("content")
-                            or (obj.get("choices", [{}])[0].get("delta", {}) or {}).get("content")
+                            or (obj.get("choices", [{}])[0].get("delta", {}) or {}).get(
+                                "content"
+                            )
                             or ""
                         )
                         print(delta if delta is not None else "", end="", flush=True)
@@ -97,33 +120,33 @@ def stream_complete(server: str, api_key: str, payload: dict, timeout: int):
         # nếu kết nối SSE lỗi, fallback JSONL
         pass
 
-    # 2) Fallback JSON lines: POST /complete với {"stream": true}
-    url_jsonl = base + "/complete"
-    headers_jsonl = build_headers(api_key, accept="application/json")
-    payload2 = dict(payload); payload2["stream"] = True
-    with requests.post(url_jsonl, headers=headers_jsonl, data=json.dumps(payload2), stream=True, timeout=timeout) as r2:
+    # 2) Fallback đơn giản: gọi /complete sync và in toàn bộ
+    url_sync = base + "/complete"
+    headers_sync = build_headers(api_key, accept="application/json")
+    print("[Fallback to sync mode]", file=sys.stderr)
+    
+    with requests.post(
+        url_sync,
+        headers=headers_sync,
+        data=json.dumps(payload),
+        timeout=timeout,
+    ) as r2:
         if r2.status_code != 200:
             raise SystemExit(f"[HTTP {r2.status_code}] {r2.text}")
-        for line in r2.iter_lines(decode_unicode=True):
-            if not line:
-                continue
-            raw = line.strip()
-            try:
-                obj = json.loads(raw)
-                delta = (
-                    obj.get("delta")
-                    or obj.get("text")
-                    or obj.get("content")
-                    or (obj.get("choices", [{}])[0].get("delta", {}) or {}).get("content")
-                    or ""
-                )
-                print(delta if delta is not None else "", end="", flush=True)
-            except Exception:
-                print(raw, end="", flush=True)
-        print()
+        try:
+            obj = r2.json()
+            completion = coalesce_completion(obj)
+            print(completion, end="", flush=True)
+            print()
+        except Exception:
+            print(r2.text, end="", flush=True)
+            print()
+
 
 def main():
-    p = argparse.ArgumentParser(description="CLI test /complete (sync/stream). Prefix đọc từ stdin hoặc file.")
+    p = argparse.ArgumentParser(
+        description="CLI test /complete (sync/stream). Prefix đọc từ stdin hoặc file."
+    )
     p.add_argument("--server", default=DEFAULT_SERVER)
     p.add_argument("--api-key", default=DEFAULT_API_KEY)
     p.add_argument("--language", default="python")
@@ -143,12 +166,20 @@ def main():
 
     prefix = read_text(args.file) if args.file else sys.stdin.read()
     if not prefix:
-        print("stdin trống. Ví dụ: echo \"def add(a,b):\\n    \" | python tools/cli.py --stream", file=sys.stderr)
+        print(
+            'stdin trống. Ví dụ: echo "def add(a,b):\\n    " | python tools/cli.py --stream',
+            file=sys.stderr,
+        )
         sys.exit(1)
     if args.suffix_file:
         args.suffix = read_text(args.suffix_file)
 
-    payload = {"prefix": prefix, "suffix": args.suffix, "language": args.language, "max_tokens": args.max_tokens}
+    payload = {
+        "prefix": prefix,
+        "suffix": args.suffix,
+        "language": args.language,
+        "max_tokens": args.max_tokens,
+    }
     if args.temp is not None:
         payload["temperature"] = args.temp
     if args.verbose:
@@ -157,8 +188,16 @@ def main():
     if args.stream:
         stream_complete(args.server, args.api_key, payload, timeout=args.timeout)
     else:
-        out = post_complete(args.server, args.api_key, payload, timeout=args.timeout, retries=args.retries, retry_wait=args.retry_wait)
+        out = post_complete(
+            args.server,
+            args.api_key,
+            payload,
+            timeout=args.timeout,
+            retries=args.retries,
+            retry_wait=args.retry_wait,
+        )
         print(strip_md_fence(out) if args.strip_fence else out, end="")
+
 
 if __name__ == "__main__":
     main()

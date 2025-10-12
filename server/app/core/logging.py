@@ -1,10 +1,12 @@
 # server/core/logging.py
 import logging
+
 from app.middleware.request_id import RequestIdFilter
+
 
 def setup_logging(level=logging.INFO):
     logging.basicConfig(
-        #Quan trong: them request_id vao format de hien thi trong log
+        # Quan trong: them request_id vao format de hien thi trong log
         format="%(asctime)s [%(levelname)s] [%(request_id)s] %(name)s: %(message)s",
         level=level,
     )

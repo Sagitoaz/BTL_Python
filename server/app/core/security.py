@@ -1,10 +1,14 @@
-from fastapi.security import HTTPBearer
-from fastapi import Security, HTTPException
+from fastapi import HTTPException, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from app.core.config import settings
 
 security = HTTPBearer(auto_error=False)
 
-def require_api_key(credentials = Security(security)):
+
+def require_api_key(
+    credentials: HTTPAuthorizationCredentials = Security(security),  # noqa: B008
+):
     if not settings.API_KEY:
         return
     if not credentials or credentials.scheme.lower() != "bearer":
