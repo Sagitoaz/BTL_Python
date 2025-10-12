@@ -1,0 +1,14 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# Các bộ quy tắc hữu ích: E (pycodestyle), F (pyflakes), I (import order), UP (pyupgrade), B (bugbear)
+select = ["E", "F", "I", "UP", "B"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+strict_optional = false
+warn_unused_ignores = true

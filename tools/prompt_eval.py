@@ -13,9 +13,14 @@ Optional:
   --fail-fast              Stop at first failure (non-200)
 """
 
-import argparse, csv, json, sys, time
+import argparse
+import csv
+import json
+import sys
+import time
 from typing import Dict, Any, List, Optional
 import requests
+
 
 def percentile(values: List[float], p: float) -> float:
     if not values:
@@ -30,18 +35,23 @@ def percentile(values: List[float], p: float) -> float:
     d1 = values[c] * (k - f)
     return d0 + d1
 
+
 def build_headers(api_key: Optional[str]) -> Dict[str, str]:
     h = {"Content-Type": "application/json"}
     if api_key:
         h["Authorization"] = f"Bearer {api_key}"
     return h
 
-def post_complete(server_url: str, payload: Dict[str, Any], headers: Dict[str, str], timeout: float):
+
+def post_complete(
+    server_url: str, payload: Dict[str, Any], headers: Dict[str, str], timeout: float
+):
     url = server_url.rstrip("/") + "/complete"
     t0 = time.perf_counter()
     resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
     dt = (time.perf_counter() - t0) * 1000.0
     return resp, dt
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -90,18 +100,20 @@ def main():
             resp, dt_ms = post_complete(args.server_url, payload, headers, args.timeout)
         except requests.RequestException as e:
             fail += 1
-            results.append({
-                "id": cid,
-                "status": "error",
-                "http_status": "",
-                "latency_ms": f"{dt_ms if 'dt_ms' in locals() else ''}",
-                "tokens_out": "",
-                "has_newline": "",
-                "starts_with_space": "",
-                "preview": "",
-                "error": f"{type(e).__name__}: {e}",
-                "note": case.get("note", ""),
-            })
+            results.append(
+                {
+                    "id": cid,
+                    "status": "error",
+                    "http_status": "",
+                    "latency_ms": f"{dt_ms if 'dt_ms' in locals() else ''}",
+                    "tokens_out": "",
+                    "has_newline": "",
+                    "starts_with_space": "",
+                    "preview": "",
+                    "error": f"{type(e).__name__}: {e}",
+                    "note": case.get("note", ""),
+                }
+            )
             if args.fail_fast:
                 break
             continue
@@ -113,38 +125,55 @@ def main():
                 data = {"completion": resp.text}
             comp = data.get("completion", "")
             preview = comp.replace("\n", "\\n")
-            results.append({
-                "id": cid,
-                "status": "ok",
-                "http_status": str(resp.status_code),
-                "latency_ms": f"{dt_ms:.2f}",
-                "tokens_out": str(len(comp)),
-                "has_newline": "yes" if "\n" in comp else "no",
-                "starts_with_space": "yes" if comp.startswith((" ", "\t", "\n")) else "no",
-                "preview": (preview[:80] + "…") if len(preview) > 80 else preview,
-                "error": "",
-                "note": case.get("note", ""),
-            })
+            results.append(
+                {
+                    "id": cid,
+                    "status": "ok",
+                    "http_status": str(resp.status_code),
+                    "latency_ms": f"{dt_ms:.2f}",
+                    "tokens_out": str(len(comp)),
+                    "has_newline": "yes" if "\n" in comp else "no",
+                    "starts_with_space": "yes"
+                    if comp.startswith((" ", "\t", "\n"))
+                    else "no",
+                    "preview": (preview[:80] + "…") if len(preview) > 80 else preview,
+                    "error": "",
+                    "note": case.get("note", ""),
+                }
+            )
             ok += 1
             latencies_ok.append(dt_ms)
         else:
-            results.append({
-                "id": cid,
-                "status": "fail",
-                "http_status": str(resp.status_code),
-                "latency_ms": f"{dt_ms:.2f}",
-                "tokens_out": "",
-                "has_newline": "",
-                "starts_with_space": "",
-                "preview": "",
-                "error": resp.text[:200],
-                "note": case.get("note", ""),
-            })
+            results.append(
+                {
+                    "id": cid,
+                    "status": "fail",
+                    "http_status": str(resp.status_code),
+                    "latency_ms": f"{dt_ms:.2f}",
+                    "tokens_out": "",
+                    "has_newline": "",
+                    "starts_with_space": "",
+                    "preview": "",
+                    "error": resp.text[:200],
+                    "note": case.get("note", ""),
+                }
+            )
             fail += 1
             if args.fail_fast:
                 break
 
-    fieldnames = ["id","status","http_status","latency_ms","tokens_out","has_newline","starts_with_space","preview","error","note"]
+    fieldnames = [
+        "id",
+        "status",
+        "http_status",
+        "latency_ms",
+        "tokens_out",
+        "has_newline",
+        "starts_with_space",
+        "preview",
+        "error",
+        "note",
+    ]
     with open(args.out, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
@@ -155,7 +184,7 @@ def main():
     p50 = percentile(latencies_ok, 0.50)
     p95 = percentile(latencies_ok, 0.95)
     p99 = percentile(latencies_ok, 0.99)
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"Total: {total} | OK: {ok} | Fail: {fail}")
     if latencies_ok:
         print(f"Latency ms (ok only): p50={p50:.2f}  p95={p95:.2f}  p99={p99:.2f}")
@@ -164,6 +193,7 @@ def main():
         sys.exit(1)
     else:
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
