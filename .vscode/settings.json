@@ -1,0 +1,14 @@
+{
+  // Cấu hình Python cho workspace
+  "python.defaultInterpreterPath": "/home/sagito/venv/bin/python",
+  
+  // Cấu hình Extension BTL - Kết nối đến server qua Tailscale
+  "btl.pythonPath": "/home/sagito/venv/bin/python",
+  "btl.serverUrl": "http://100.109.118.90:9000",
+  "btl.apiKey": "5conmeo",
+  "btl.enableStreaming": false,
+  "btl.timeoutMs": 8000,
+  
+  // Tắt các extension Python khác có thể xung đột
+  "python.languageServer": "Pylance"
+}

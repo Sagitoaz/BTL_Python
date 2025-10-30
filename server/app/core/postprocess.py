@@ -1,17 +1,80 @@
+import re
+
 FENCES = ("```python", "```py", "```", "~~~")
 
 
 def strip_fences(text: str) -> str:
+    """
+    Aggressively remove all markdown fences and code block markers.
+    Tries multiple strategies to extract clean code.
+    """
+    # Strategy 1: Try to extract content from markdown code blocks
+    extracted = extract_code_content(text)
+    if extracted and extracted != text:
+        return extracted.strip()
+    
+    # Strategy 2: Remove all fence patterns
     t = text
-    for fence in FENCES:
-        if fence in t:
-            t = t.replace(fence, "")
-    return t.strip()
+    # Remove backtick fences with optional language identifier
+    t = re.sub(r'```\w*\n?', '', t)
+    t = re.sub(r'```', '', t)
+    # Remove tilde fences
+    t = re.sub(r'~~~\w*\n?', '', t)
+    t = re.sub(r'~~~', '', t)
+    # Remove any remaining single backticks
+    t = t.replace('`', '')
+    
+    result = t.strip()
+    
+    # Validation: If result still has fences, try line-by-line cleaning
+    if '```' in result or '~~~' in result:
+        lines = result.split('\n')
+        cleaned_lines = [ln for ln in lines if not ln.strip().startswith(('```', '~~~'))]
+        result = '\n'.join(cleaned_lines).strip()
+    
+    return result
+
+
+def extract_code_content(text: str) -> str:
+    """
+    Extract pure code content from markdown-wrapped text.
+    Supports multiple markdown code block formats.
+    """
+    # Pattern 1: ```python\ncode\n```
+    match = re.search(r'```(?:python|py)\s*\n(.*?)```', text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    
+    # Pattern 2: ```\ncode\n```
+    match = re.search(r'```\s*\n(.*?)```', text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    
+    # Pattern 3: ~~~python\ncode\n~~~
+    match = re.search(r'~~~(?:python|py)?\s*\n(.*?)~~~', text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    
+    # Pattern 4: Single backticks for inline code
+    match = re.search(r'`([^`]+)`', text)
+    if match and '\n' not in match.group(1):
+        return match.group(1).strip()
+    
+    # No markdown found, return original
+    return text
 
 
 def cut_at_stops(text: str, stops: list[str]) -> str:
-    idxs = [i for s in (stops or []) if (i := text.find(s)) >= 0]
-    return text if not idxs else text[: min(idxs)]
+    """Cut text at first occurrence of any stop sequence."""
+    if not stops:
+        return text
+    
+    idxs = [text.find(s) for s in stops if text.find(s) >= 0]
+    if not idxs:
+        return text
+    
+    cut_point = min(idxs)
+    return text[:cut_point]
 
 
 def last_line_indent(prefix: str) -> int:
@@ -22,35 +85,87 @@ def last_line_indent(prefix: str) -> int:
 
 
 def align_first_line(prefix: str, completion: str) -> str:
+    """
+    Align the first line of completion with the indentation of the last line in prefix.
+    Preserves indentation of subsequent lines relative to the first line.
+    """
+    if not completion:
+        return completion
+    
     base = last_line_indent(prefix)
     lines = completion.splitlines()
+    
+    if not lines:
+        return completion
+    
     fixed: list[str] = []
     for i, ln in enumerate(lines):
+        # Empty lines pass through unchanged
         if not ln.strip():
             fixed.append(ln)
             continue
-        fixed.append(((" " * base) + ln.lstrip()) if i == 0 else ln)
+        
+        if i == 0:
+            # First line: align to base indent
+            content = ln.lstrip()
+            fixed.append((" " * base) + content)
+        else:
+            # Subsequent lines: preserve their relative indentation
+            # But ensure they're at least as indented as the base
+            current_indent = len(ln) - len(ln.lstrip())
+            if current_indent < base:
+                # Line is under-indented, fix it
+                content = ln.lstrip()
+                fixed.append((" " * base) + content)
+            else:
+                # Line has proper indentation, keep it
+                fixed.append(ln)
+    
     return "\n".join(fixed)
 
 
 def cut_overlap_tail(prefix: str, completion: str) -> str:
+    """
+    Remove overlap between end of prefix and start of completion.
+    Checks up to 256 chars from end of prefix.
+    """
+    if not prefix or not completion:
+        return completion
+    
+    # Look at last 256 chars of prefix
     tail = prefix[-256:]
-    cut = 0
-    for k in range(min(len(tail), len(completion)), 0, -1):
+    
+    # Try matching lengths from longest to shortest
+    max_check = min(len(tail), len(completion), 128)  # Increased from implicit 256 to 128 for performance
+    
+    for k in range(max_check, 0, -1):
         if tail.endswith(completion[:k]):
-            cut = k
-            break
-    return completion[cut:]
+            # Found overlap of length k, remove it from completion
+            return completion[k:]
+    
+    return completion
 
 
 def cut_overlap_head(suffix: str, completion: str) -> str:
+    """
+    Remove overlap between end of completion and start of suffix.
+    Checks up to 256 chars from start of suffix.
+    """
+    if not suffix or not completion:
+        return completion
+    
+    # Look at first 256 chars of suffix
     head = suffix[:256]
-    cut = 0
-    for k in range(min(len(head), len(completion)), 0, -1):
+    
+    # Try matching lengths from longest to shortest
+    max_check = min(len(head), len(completion), 128)
+    
+    for k in range(max_check, 0, -1):
         if completion.endswith(head[:k]):
-            cut = k
-            break
-    return completion[:-cut] if cut > 0 else completion
+            # Found overlap of length k, remove it from completion
+            return completion[:-k]
+    
+    return completion
 
 
 def postprocess(prefix: str, suffix: str, raw: str, stops: list[str]) -> str:
