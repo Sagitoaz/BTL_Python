@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.postprocess import postprocess
 from app.core.security import require_api_key
 from app.schemas.completion import DEFAULT_STOPS_PY, CompleteRequest, CompleteResponse
-from app.services.ollama import build_prompt, call_generate, new_request_id
+from app.services.groq import build_prompt, call_groq_completion, new_request_id
 
 router = APIRouter(prefix="", tags=["completion"])
 logger = logging.getLogger("completion")
@@ -17,12 +17,10 @@ logger = logging.getLogger("completion")
 @router.post("/complete", response_model=CompleteResponse, dependencies=[Depends(require_api_key)])
 def complete(req: CompleteRequest):
     req_id = new_request_id()
-    prompt = build_prompt(req)  # giữ chữ ký dùng 1 object CompleteRequest
+    prompt = build_prompt(req)
     stops = (req.stop or []) + DEFAULT_STOPS_PY
     try:
-        r = call_generate(prompt, req.max_tokens, req.temperature, stops, stream=False)
-        data = r.json()
-        raw = data.get("response", "")
+        raw = call_groq_completion(prompt, req.max_tokens, req.temperature, stops)
         completion = (
             postprocess(req.prefix, req.suffix, raw, stops) if settings.POSTPROCESS_ENABLED else raw
         )
@@ -35,31 +33,35 @@ def complete(req: CompleteRequest):
 
 @router.post("/complete_stream", dependencies=[Depends(require_api_key)])
 def complete_stream(req: CompleteRequest, request: Request):
+    """
+    Streaming endpoint - NOTE: Groq API returns full response, we simulate streaming.
+    For true streaming, consider using Groq's streaming API in future.
+    """
     req_id = new_request_id()
-    prompt = build_prompt(req)  # đồng bộ chữ ký như /complete
-    stops = (req.stop or []) + DEFAULT_STOPS_PY  # sửa tên biến
-    upstream = call_generate(prompt, req.max_tokens, req.temperature, stops, stream=True)
-
+    prompt = build_prompt(req)
+    stops = (req.stop or []) + DEFAULT_STOPS_PY
+    
     def gen():
         yield f"event: meta\ndata: {json.dumps({'request_id': req_id})}\n\n"
-        buf = []
-        for line in upstream.iter_lines(decode_unicode=True):
-            if not line:
-                continue
-            try:
-                obj = json.loads(line)
-                chunk = obj.get("response", "")
-            except Exception:
-                chunk = line
-            buf.append(chunk)
-            yield f"data: {json.dumps({'delta': chunk})}\n\n"
-        raw = "".join(buf)
-        final = (
-            postprocess(req.prefix, req.suffix, raw, stops) if settings.POSTPROCESS_ENABLED else raw
-        )
-        yield f"event: final\ndata: {json.dumps({'completion': final})}\n\n"
-        yield "event: done\ndata: {}\n\n"
+        try:
+            # Groq returns full completion (not streaming yet)
+            raw = call_groq_completion(prompt, req.max_tokens, req.temperature, stops)
+            
+            # Simulate streaming by chunking
+            chunk_size = 10
+            for i in range(0, len(raw), chunk_size):
+                chunk = raw[i:i+chunk_size]
+                yield f"data: {json.dumps({'delta': chunk})}\n\n"
+            
+            final = (
+                postprocess(req.prefix, req.suffix, raw, stops) if settings.POSTPROCESS_ENABLED else raw
+            )
+            yield f"event: final\ndata: {json.dumps({'completion': final})}\n\n"
+            yield "event: done\ndata: {}\n\n"
+        except Exception as e:
+            logger.exception("Error in streaming completion")
+            yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
 
     rid = getattr(request.state, settings.REQUEST_ID, "-")
-    logger.info("Received /complete", extra={settings.REQUEST_ID: rid})
+    logger.info("Received /complete_stream", extra={settings.REQUEST_ID: rid})
     return StreamingResponse(gen(), media_type="text/event-stream")

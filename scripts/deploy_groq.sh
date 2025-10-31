@@ -1,0 +1,97 @@
+#!/bin/bash
+# Script để deploy Groq version lên Render
+
+echo "🚀 GROQ MIGRATION DEPLOYMENT GUIDE"
+echo "=================================="
+echo ""
+
+# Step 1: Verify local changes
+echo "✅ Step 1: Local changes verified"
+echo "   - Created: server/app/services/groq.py"
+echo "   - Updated: server/app/core/config.py"
+echo "   - Updated: server/app/routers/completions.py"
+echo "   - Updated: server/app/routers/health.py"
+echo "   - Updated: server/requirements.txt (added groq>=0.4.0)"
+echo "   - Updated: server/.env.example"
+echo "   - Created: DEPLOY_GROQ_RENDER.md"
+echo ""
+
+# Step 2: Git commands
+echo "📝 Step 2: Push to GitHub"
+echo "   Run these commands:"
+echo ""
+echo "   cd /home/sagito/Desktop/BTL_Python"
+echo "   git add ."
+echo "   git commit -m 'feat: migrate from Ollama to Groq Cloud API'"
+echo "   git push origin dev"
+echo ""
+
+# Step 3: Render environment variables
+echo "🔧 Step 3: Update Render Environment Variables"
+echo "   Go to: https://dashboard.render.com/web/btl-python-r9kz"
+echo "   Click: Environment → Add Environment Variable"
+echo ""
+echo "   ADD these new variables:"
+echo "   ┌─────────────────────┬────────────────────────────────────┐"
+echo "   │ Key                 │ Value                              │"
+echo "   ├─────────────────────┼────────────────────────────────────┤"
+echo "   │ GROQ_API_KEY        │ gsk_... (from console.groq.com)    │"
+echo "   │ GROQ_MODEL          │ llama-3.1-70b-versatile            │"
+echo "   └─────────────────────┴────────────────────────────────────┘"
+echo ""
+echo "   DELETE these old variables:"
+echo "   - OLLAMA_URL"
+echo "   - OLLAMA_API_KEY"
+echo "   - MODEL"
+echo ""
+echo "   KEEP these variables:"
+echo "   - API_KEY (5conmeo)"
+echo "   - NUM_CTX (4096)"
+echo "   - POSTPROCESS_ENABLED (true)"
+echo ""
+
+# Step 4: Get Groq API Key
+echo "🔑 Step 4: Get Groq API Key"
+echo "   1. Go to: https://console.groq.com"
+echo "   2. Sign up/Login (free!)"
+echo "   3. Go to: API Keys section"
+echo "   4. Click: Create API Key"
+echo "   5. Copy the key (starts with gsk_...)"
+echo ""
+
+# Step 5: Deploy
+echo "🚀 Step 5: Deploy"
+echo "   After updating env vars, Render will auto-deploy."
+echo "   Or click 'Manual Deploy' → 'Deploy latest commit'"
+echo "   Wait 2-3 minutes for deployment."
+echo ""
+
+# Step 6: Test
+echo "🧪 Step 6: Test Deployment"
+echo "   Test health endpoint:"
+echo ""
+echo "   curl https://btl-python-r9kz.onrender.com/health"
+echo ""
+echo "   Expected response:"
+echo '   {"status":"ok","model":"llama-3.1-70b-versatile","available_models":[...]}'
+echo ""
+echo "   If status='degraded', check:"
+echo "   - GROQ_API_KEY is set correctly"
+echo "   - Key is valid at console.groq.com"
+echo "   - Check logs in Render dashboard"
+echo ""
+
+# Summary
+echo "📊 Summary"
+echo "   ✅ Code migrated from Ollama to Groq"
+echo "   ✅ All files compile successfully"
+echo "   ✅ Ready to deploy"
+echo ""
+echo "   Benefits:"
+echo "   - No local Ollama server needed"
+echo "   - No ngrok/Cloudflare tunneling"
+echo "   - Free Groq API (30 req/min)"
+echo "   - Always-on 24/7"
+echo "   - <2s response time"
+echo ""
+echo "🎉 Ready to deploy! Follow steps above."

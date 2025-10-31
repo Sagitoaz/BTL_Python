@@ -2,14 +2,10 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Ollama endpoint (can be local or remote). Examples:
-    # - Local Ollama: http://127.0.0.1:11434
-    # - Remote/Cloud: https://ollama.example.com
-    OLLAMA_URL: str = "http://127.0.0.1:11434"
-    # API key to authenticate against Ollama Cloud (if required). Leave blank for local Ollama.
-    OLLAMA_API_KEY: str = ""
-    # Which model to use on the Ollama server
-    MODEL: str = "qwen2.5-coder:7b"
+    # Groq Cloud API - Get your key from console.groq.com
+    GROQ_API_KEY: str = ""
+    # Recommended models: llama-3.1-70b-versatile (fast), codellama-34b-instruct (code-focused)
+    GROQ_MODEL: str = "llama-3.1-70b-versatile"
 
     # Server configuration
     HOST: str = "0.0.0.0"
