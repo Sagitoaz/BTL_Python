@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # Ignore old OLLAMA_URL, MODEL env vars during migration
 
 
 settings = Settings()
