@@ -1,128 +1,270 @@
-# 🤖 BTL Python - AI Code Completion Extension
+# 🤖 BTL Python AI Coder
 
-**GitHub Copilot-like AI code assistant for Python** - Powered by Groq Cloud LLM with Personalization
+**Personalized AI-powered Python code completion extension for VS Code**
 
-[![Status](https://img.shields.io/badge/status-production-brightgreen)](https://btl-python-r9kz.onrender.com/health)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](CHANGELOG.md)
-[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](CHANGELOG.md)
+[![Powered by Groq](https://img.shields.io/badge/Powered%20by-Groq-orange.svg)](https://groq.com/)
 
----
-
-## ✨ Features
-
-### Core Features
-- 🤖 **Smart Code Completion**: AI-powered suggestions while you type
-- ⚡ **Fast**: Sub-second response time (after cold start)
-- 🎯 **Accurate**: High success rate, zero markdown artifacts
-- 📐 **Auto-formatted**: Always returns clean, properly formatted code
-- 🛡️ **Syntax-safe**: Never generates syntax-breaking suggestions
-- ☁️ **Cloud-hosted**: 24/7 availability on Render.com
-
-### 🆕 v1.0.0: Personalization System
-- 🎨 **Learns Your Style**: Automatically detects indentation, quotes, naming conventions
-- 📊 **Incremental Learning**: Gets better with every accepted completion
-- 🔐 **Privacy-Focused**: Anonymous user IDs (SHA-256 hashing)
-- 🗑️ **GDPR Compliant**: Delete your data anytime
-- 📈 **Profile Dashboard**: View your coding style metrics
-- ⚙️ **Configurable**: Enable/disable personalization in settings
+> GitHub Copilot alternative with personalization - learns your coding style and adapts suggestions to match your preferences!
 
 ---
 
-## 🚀 Quick Start
+## ✨ Tính năng chính
 
-### Install & Run
+### 🎯 Personalized AI Suggestions
+- **Học phong cách code của bạn**: Tự động phát hiện indent, quotes, naming conventions
+- **Càng dùng càng thông minh**: Học từ mỗi completion bạn accept
+- **Privacy-focused**: User ID anonymous (SHA-256 hash), không lưu code
+- **GDPR compliant**: Xóa data bất cứ lúc nào
+
+### ⚡ Fast & Smart
+- **Groq Cloud API**: Powered by llama-3.3-70b-versatile
+- **Sub-second response**: Nhanh, chính xác
+- **Cloud-hosted**: 24/7 availability trên Render.com
+- **Smart postprocessing**: Tự động format, align indentation
+
+### 🛠️ Developer Friendly
+- **Inline completion**: Gợi ý ngay khi gõ code
+- **Configurable**: Nhiều settings để customize
+- **Profile dashboard**: Xem metrics coding style của bạn
+- **Feedback tracking**: Tự động cải thiện từ usage
+
+---
+
+## 🚀 Cài đặt
+
+### Từ VS Code Marketplace (Khuyến nghị)
+
+1. Mở VS Code
+2. Vào Extensions (`Ctrl+Shift+X`)
+3. Tìm "BTL Python AI Coder"
+4. Click Install
+
+### Từ Source Code
+
 ```bash
-# 1. Clone
+# Clone repository
 git clone https://github.com/Sagitoaz/BTL_Python.git
 cd BTL_Python
 
-# 2. Install dependencies
+# Cài dependencies
 npm install
 
-# 3. Compile
+# Compile TypeScript
 npm run compile
 
-# 4. Open in VSCode and press F5
-code .
+# Press F5 trong VS Code để test
 ```
 
-### Use
-1. Open any Python file
-2. Start typing code
-3. Wait 1-2 seconds
-4. See ghost text suggestion
-5. Press **Tab** or **→** to accept
-6. Your style is learned automatically!
+---
 
-### View Your Coding Profile
-1. Press `Cmd/Ctrl+Shift+P`
-2. Run: `BTL: View My Coding Profile`
-3. See your detected coding style (indent, quotes, naming, etc.)
+## 📖 Cách sử dụng
 
-### Clear Your Data (GDPR)
-1. Press `Cmd/Ctrl+Shift+P`
-2. Run: `BTL: Clear My Coding Profile`
-3. All your personalization data is deleted
+### Sử dụng cơ bản
+
+1. Mở file Python bất kỳ
+2. Bắt đầu gõ code
+3. Đợi 1-2 giây để AI gợi ý (ghost text màu xám)
+4. Nhấn **Tab** để accept suggestion
+5. Nhấn **Esc** để dismiss
+
+**Extension sẽ tự động học style code của bạn!**
+
+### Xem Coding Profile
+
+1. `Cmd/Ctrl + Shift + P`
+2. Gõ: `BTL: View My Coding Profile`
+3. Xem metrics: indent size, quote preference, naming convention, type hints usage, etc.
+
+### Xóa Data (GDPR)
+
+1. `Cmd/Ctrl + Shift + P`
+2. Gõ: `BTL: Clear My Coding Profile`
+3. Confirm deletion
 
 ---
 
 ## ⚙️ Settings
 
-Open VS Code settings (`Cmd/Ctrl + ,`) and search for "BTL":
+Mở VS Code Settings (`Cmd/Ctrl + ,`) và tìm "BTL":
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `btl.serverUrl` | Cloud server | Backend API endpoint |
-| `btl.apiKey` | `5conmeo` | Authentication key |
-| `btl.timeoutMs` | `15000` | Request timeout |
-| `btl.enablePersonalization` | `true` | Enable style learning |
-| `btl.sendFeedback` | `true` | Send accept/reject feedback |
-| `btl.enableStreaming` | `false` | Streaming mode (experimental) |
-
----
-
-## 📖 Documentation
-
-- 📘 **[QUICK_START.md](QUICK_START.md)** - Get started in 2 minutes
-- 🧪 **[HOW_TO_TEST_EXTENSION.md](HOW_TO_TEST_EXTENSION.md)** - Testing guide
-- 📊 **[PROJECT_COMPLETION_SUMMARY.md](PROJECT_COMPLETION_SUMMARY.md)** - Full project summary
-- 🚀 **[DEPLOY_GROQ_RENDER.md](DEPLOY_GROQ_RENDER.md)** - Deployment guide
-- 💻 **[PROJECT_README.md](PROJECT_README.md)** - Technical deep-dive
+| Setting | Default | Mô tả |
+|---------|---------|-------|
+| `btl.serverUrl` | Cloud server | URL backend API |
+| `btl.apiKey` | `5conmeo` | API key authentication |
+| `btl.timeoutMs` | `15000` | Timeout request (ms) |
+| `btl.enablePersonalization` | `true` | Bật/tắt personalization |
+| `btl.sendFeedback` | `true` | Gửi feedback để cải thiện |
+| `btl.enableStreaming` | `false` | Streaming mode (thử nghiệm) |
 
 ---
 
-## 🏗️ Architecture
+## 🎯 Personalization hoạt động thế nào?
+
+### Style Detection
+
+Extension phát hiện:
+- **Indentation**: Tabs hay spaces? 2, 4, hay 8 spaces?
+- **Quotes**: Single `'` hay double `"`?
+- **Naming**: `snake_case` hay `camelCase`?
+- **Type hints**: Có dùng type annotations không?
+- **Docstrings**: Format docstring như thế nào?
+- **Line length**: Độ dài dòng tối đa ưa thích
+
+### Incremental Learning
+
+Mỗi khi accept completion:
+1. Code được analyze để tìm patterns
+2. Profile được update (weighted averaging: 30% mới, 70% cũ)
+3. Lần sau AI sẽ gợi ý theo style đã học
+
+### Privacy
+
+- **User ID**: SHA-256 hash của machine ID (anonymous)
+- **Storage**: Profile lưu trên server dạng JSON
+- **Data stored**: CHỈ metrics, KHÔNG lưu code thật
+- **GDPR**: Có thể xóa data bất cứ lúc nào
+
+---
+
+## 🏗️ Kiến trúc
 
 ```
-┌─────────────────┐
-│  VSCode Client  │  (TypeScript Extension)
-│  Inline Provider│
-└────────┬────────┘
-         │ HTTPS
-         ▼
-┌─────────────────┐
-│  FastAPI Server │  (Python Backend)
-│  on Render.com  │
-└────────┬────────┘
-         │ API Call
-         ▼
-┌─────────────────┐
-│   Groq Cloud    │  (LLM Provider)
-│ llama-3.3-70b   │
-└─────────────────┘
+┌─────────────────────┐
+│  VS Code Extension  │  (TypeScript)
+│  Inline Provider    │
+└──────────┬──────────┘
+           │ HTTPS + X-User-ID header
+           ▼
+┌─────────────────────┐
+│  FastAPI Backend    │  (Python)
+│  User Profiling     │
+│  on Render.com      │
+└──────────┬──────────┘
+           │ API Call
+           ▼
+┌─────────────────────┐
+│   Groq Cloud API    │  (LLM)
+│ llama-3.3-70b-versatile │
+└─────────────────────┘
+```
+
+**Backend Endpoints:**
+- `POST /complete` - Lấy code completion (với X-User-ID)
+- `POST /feedback/completion` - Gửi feedback accept/reject
+- `GET /feedback/profile` - Xem user profile
+- `DELETE /feedback/profile` - Xóa user data
+- `GET /health` - Health check
+
+---
+
+## 🧪 Testing Tools
+
+### CLI Tester
+```bash
+echo "def add(a, b):\n    " | python tools/cli.py --server https://btl-python-r9kz.onrender.com --api-key 5conmeo
+```
+
+### Stress Test
+```bash
+python tools/stress.py --server https://btl-python-r9kz.onrender.com --api-key 5conmeo --requests 100 --concurrency 10
 ```
 
 ---
 
-## 🎯 Test Results
+## 🛠️ Development
 
-**Latest Run (Nov 2, 2025 23:43)**
+### Chạy Local Backend
 
-- ✅ **Success Rate**: 100% (24/24 tests)
-- ✅ **Markdown Issues**: 0%
-- ⚡ **Average Latency**: 1131ms
-- ⚡ **P50 Latency**: 724ms
-- ⚡ **Min/Max**: 556ms / 1994ms
+```bash
+cd server
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload
+```
+
+### Compile Extension
+
+```bash
+npm install
+npm run compile
+# hoặc watch mode:
+npm run watch
+```
+
+### Test Extension
+
+Press `F5` trong VS Code để launch Extension Development Host
+
+### Run Tests
+
+```bash
+# Backend tests
+cd server
+pytest
+
+# Frontend compile test
+npm run compile
+```
+
+---
+
+## 📝 Changelog
+
+Xem [CHANGELOG.md](CHANGELOG.md) để biết lịch sử phiên bản.
+
+**v1.0.0** (Latest):
+- ✨ Personalization system
+- ✨ User profiling với style detection
+- ✨ Feedback tracking
+- ✨ Profile management commands
+- 🔒 Privacy-focused với GDPR compliance
+
+---
+
+## 📄 License
+
+MIT License - xem [LICENSE](LICENSE) file.
+
+---
+
+## 🐛 Known Issues
+
+- **Dedent keywords**: `elif`/`else`/`except` cần manual cursor positioning (VS Code API limitation)
+- **Cold start**: Request đầu tiên có thể chậm do Render.com free tier
+- **Streaming mode**: Experimental, có thể không ổn định
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! 
+
+1. Fork repo
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'feat: add amazing feature'`
+4. Push: `git push origin feature/amazing-feature`
+5. Open Pull Request
+
+---
+
+## 🙏 Acknowledgments
+
+- **Groq** - Fast LLM inference
+- **VS Code** - Extension API
+- **FastAPI** - Backend framework
+- **Render.com** - Free hosting
+
+---
+
+## 📧 Contact
+
+- **GitHub**: [@Sagitoaz](https://github.com/Sagitoaz)
+- **Issues**: [GitHub Issues](https://github.com/Sagitoaz/BTL_Python/issues)
+
+---
+
+Made with ❤️ by Sagito | Powered by Groq 🚀
 
 **Test Cases**:
 - ✅ Simple functions
