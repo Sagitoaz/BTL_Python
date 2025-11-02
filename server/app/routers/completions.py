@@ -2,8 +2,9 @@ import json
 import logging
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from fastapi.responses import StreamingResponse
+from typing import Optional
 
 from app.core.config import settings
 from app.core.postprocess import postprocess
@@ -12,17 +13,30 @@ from app.core.security import require_api_key
 from app.middleware.telemetry import get_telemetry_collector
 from app.schemas.completion import DEFAULT_STOPS_PY, CompleteRequest, CompleteResponse
 from app.services.groq import build_prompt, call_groq_completion, new_request_id
+from app.services.user_profiling import get_profiler
 
 router = APIRouter(prefix="", tags=["completion"])
 logger = logging.getLogger("completion")
 
 
 @router.post("/complete", response_model=CompleteResponse, dependencies=[Depends(require_api_key)])
-def complete(req: CompleteRequest):
+def complete(
+    req: CompleteRequest,
+    x_user_id: Optional[str] = Header(None, description="User identifier for personalization")
+):
     req_id = new_request_id()
     start_time = time.time()
     
-    prompt = build_prompt(req)
+    # Get personalized style hints if user_id provided
+    user_style_hints = ""
+    if x_user_id:
+        try:
+            profiler = get_profiler()
+            user_style_hints = profiler.get_style_hints(x_user_id)
+        except Exception as e:
+            logger.warning(f"Failed to get style hints: {e}")
+    
+    prompt = build_prompt(req, user_style_hints)
     stops = (req.stop or []) + DEFAULT_STOPS_PY
     try:
         raw = call_groq_completion(prompt, req.max_tokens, req.temperature, stops)
@@ -55,7 +69,8 @@ def complete(req: CompleteRequest):
                 language=req.language,
                 completion=completion,
                 latency_ms=latency_ms,
-                model=settings.GROQ_MODEL
+                model=settings.GROQ_MODEL,
+                user_id=x_user_id  # Include user_id in telemetry
             )
         except Exception as e:
             logger.error(f"Telemetry recording failed: {e}")
@@ -65,9 +80,6 @@ def complete(req: CompleteRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unknown error: {e}") from e
-
-
-@router.post("/complete_stream", dependencies=[Depends(require_api_key)])
 def complete_stream(req: CompleteRequest, request: Request):
     """
     Streaming endpoint - NOTE: Groq API returns full response, we simulate streaming.

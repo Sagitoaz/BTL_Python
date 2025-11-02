@@ -1,20 +1,47 @@
 {
-  "name": "btl_python",
-  "displayName": "AI Coder",
-  "description": "Inline Python suggestions via your FastAPI server",
+  "name": "btl-python-ai-coder",
+  "displayName": "BTL Python AI Coder",
+  "description": "🤖 Personalized AI code completion powered by Groq - GitHub Copilot alternative with user profiling",
   "version": "1.0.0",
-  "publisher": "your-name",
-  "license": "ISC",
+  "publisher": "Sagitoaz",
+  "author": {
+    "name": "Sagito",
+    "email": "sagito@example.com"
+  },
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Sagitoaz/BTL_Python.git"
+    "url": "https://github.com/Sagitoaz/BTL_Python.git"
   },
   "bugs": {
     "url": "https://github.com/Sagitoaz/BTL_Python/issues"
   },
   "homepage": "https://github.com/Sagitoaz/BTL_Python#readme",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "code-completion",
+    "copilot",
+    "python",
+    "groq",
+    "llm",
+    "autocomplete",
+    "intellisense",
+    "personalized",
+    "code-assistant"
+  ],
   "engines": {
-    "vscode": "^1.103.0"
+    "vscode": "^1.85.0"
   },
   "main": "out/extension.js",
   "activationEvents": [
@@ -24,44 +51,58 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "BTL Settings",
+      "title": "BTL Python AI Coder",
       "properties": {
-        "btl.pythonPath": {
-          "type": "string",
-          "default": "python",
-          "description": "Đường dẫn Python (trong env AIProPTIT)."
-        },
         "btl.serverUrl": {
           "type": "string",
-          "default": "http://localhost:9000",
-          "description": "SERVER_URL cho FastAPI."
+          "default": "https://btl-python-r9kz.onrender.com",
+          "description": "Backend server URL (default: cloud server)"
         },
         "btl.apiKey": {
           "type": "string",
-          "default": "",
-          "description": "API_KEY cho FastAPI."
+          "default": "5conmeo",
+          "description": "API key for authentication (change in production)"
         },
         "btl.enableStreaming": {
           "type": "boolean",
           "default": false,
-          "description": "Bật stream SSE (/complete_stream) để hiển thị gợi ý theo thời gian thực."
+          "description": "Enable streaming completion (experimental)"
         },
         "btl.timeoutMs": {
           "type": "number",
-          "default": 8000,
+          "default": 15000,
           "minimum": 1000,
-          "description": "Timeout request (ms) khi gọi FastAPI."
+          "maximum": 60000,
+          "description": "Request timeout in milliseconds"
+        },
+        "btl.enablePersonalization": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable personalized suggestions based on your coding style"
+        },
+        "btl.sendFeedback": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send accept/reject feedback to improve suggestions"
         }
       }
     },
     "commands": [
       {
         "command": "btl.inlineSuggest",
-        "title": "BTL: Trigger Inline Suggest"
+        "title": "BTL: Trigger Inline Suggestion"
       },
       {
         "command": "btl.testCompletion",
         "title": "BTL: Test Completion"
+      },
+      {
+        "command": "btl.viewProfile",
+        "title": "BTL: View My Coding Profile"
+      },
+      {
+        "command": "btl.clearProfile",
+        "title": "BTL: Clear My Coding Profile"
       }
     ]
   },

@@ -15,13 +15,14 @@ from app.schemas.completion import CompleteRequest
 logger = logging.getLogger(__name__)
 
 
-def build_prompt(seq: CompleteRequest) -> str:
+def build_prompt(req: CompleteRequest, user_style_hints: str = "") -> str:
     """
     Build an enhanced prompt with clear instructions and few-shot examples.
+    Optionally includes personalized style hints based on user's coding patterns.
     Optimized for Groq's fast inference.
     """
     rules = [
-        f"Return ONLY the missing {seq.language} code that should appear at the cursor position.",
+        f"Return ONLY the missing {req.language} code that should appear at the cursor position.",
         "CRITICAL: Never use markdown code blocks, backticks (```), or any formatting markers.",
         "Output must be pure, executable code that can be inserted directly into the file.",
         "Do not add explanations, comments, or docstrings unless they are part of the actual code logic.",
@@ -30,6 +31,10 @@ def build_prompt(seq: CompleteRequest) -> str:
         "If the prefix ends with ':', indent the completion by 4 spaces (Python block).",
         "Keep completions concise but complete - finish the current logical block.",
     ]
+    
+    # Add user style hints if available
+    if user_style_hints:
+        rules.insert(3, user_style_hints)
     
     # Few-shot examples
     examples = f"""
@@ -50,13 +55,13 @@ OUTPUT: x**2 for x in numbers
 """
     
     return (
-        f"You are an expert {seq.language} code completion AI.\n"
+        f"You are an expert {req.language} code completion AI.\n"
         "Your ONLY job is to complete the code at the cursor position.\n\n"
         "RULES (follow ALL strictly):\n- " + "\n- ".join(rules) + "\n\n"
         + examples + "\n"
         "NOW complete the following code at <cursor/> position:\n\n"
-        f"<prefix>\n{seq.prefix}\n</prefix>\n\n"
-        f"<suffix>\n{seq.suffix}\n</suffix>\n\n"
+        f"<prefix>\n{req.prefix}\n</prefix>\n\n"
+        f"<suffix>\n{req.suffix}\n</suffix>\n\n"
         "<cursor/>\n\n"
         "OUTPUT (raw code only, NO markdown):\n"
     )

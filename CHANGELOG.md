@@ -1,4 +1,73 @@
-# 📋 CHANGELOG - BTL_Python AI Code Completion
+# Changelog
+
+All notable changes to the BTL Python AI Coder extension will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2025-01-XX
+
+### Added
+- **Personalized Code Suggestions**: AI learns your coding style (indentation, quotes, naming conventions, etc.)
+- **User Profiling System**: Automatically analyzes accepted completions to detect preferences
+- **Feedback Mechanism**: Tracks accept/reject events to improve suggestions over time
+- **Privacy-Focused**: User profiles stored with anonymous hashed IDs
+- **GDPR Compliance**: Built-in data deletion endpoint
+- **New Commands**:
+  - `BTL: View My Coding Profile` - See your detected coding style preferences
+  - `BTL: Clear My Coding Profile` - Delete your personalization data
+- **New Settings**:
+  - `btl.enablePersonalization` - Toggle personalized suggestions
+  - `btl.sendFeedback` - Control feedback collection
+
+### Changed
+- Migrated from local Ollama to Groq Cloud API for better performance
+- Updated server URL to cloud deployment (Render.com)
+- Improved indentation alignment for nested code blocks
+- Enhanced error handling with graceful degradation
+- Updated API to version 1.0 with user ID support
+
+### Fixed
+- Indentation issues with nested if/elif/else blocks
+- Relative indentation preservation in multi-line completions
+- Race conditions in completion requests
+- Memory leaks in long coding sessions
+
+## [0.2.0] - 2025-01-10 - Groq Migration & Indentation Fixes
+
+### Added
+- Groq Cloud API integration (llama-3.3-70b-versatile model)
+- Cloud server deployment on Render.com
+- FastAPI health check endpoint
+- Request ID tracking for debugging
+
+### Changed
+- Replaced Ollama with Groq for faster inference
+- Improved prompt engineering with better code context
+- Updated timeout to 15 seconds for cloud latency
+
+### Fixed
+- Postprocessing indentation logic (align_first_line function)
+- Code prefix extraction with better context awareness
+
+## [0.1.0] - 2025-01-05 - Initial Release
+
+### Added
+- Initial release with local Ollama support
+- Inline code completion for Python
+- FastAPI backend server
+- Basic configuration settings
+- Streaming support (experimental)
+- Test commands for debugging
+
+### Known Issues
+- Indentation sometimes misaligned in nested blocks (fixed in 0.2.0)
+- Dedent keywords (elif/else/except) require manual cursor positioning (VSCode API limitation)
+- Local Ollama performance varies by hardware (migrated to cloud in 0.2.0)
+
+---
+
+## Historical Development Log (Pre-1.0)
 
 ## [Phase 1] - 2025-10-30 - Cải thiện Postprocessing & Prompt
 
