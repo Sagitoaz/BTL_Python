@@ -85,6 +85,9 @@ def call_groq_completion(
     }
     
     # Groq uses OpenAI-compatible API
+    # Limit stop sequences to max 4 (Groq requirement)
+    stop_sequences = (stop or [])[:4] if stop else []
+    
     body = {
         "model": settings.GROQ_MODEL,
         "messages": [
@@ -99,7 +102,7 @@ def call_groq_completion(
         ],
         "max_tokens": max_tokens,
         "temperature": temperature,
-        "stop": stop or [],
+        "stop": stop_sequences,
         "stream": False
     }
     
