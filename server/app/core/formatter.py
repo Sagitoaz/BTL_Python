@@ -77,6 +77,50 @@ def format_with_autopep8(code: str, max_line_length: int = 88) -> tuple[str, Opt
         return code, f"Formatting error: {str(e)}"
 
 
+def normalize_python_code(code: str) -> str:
+    """
+    Lightweight normalization for Python code when a proper formatter
+    is not available or fails.
+
+    - Convert tabs to 4 spaces
+    - Strip trailing whitespace
+    - Collapse multiple blank lines to a single blank line
+    - Ensure consistent newline endings (\n)
+    - Remove leading/trailing blank lines
+    """
+    if not code:
+        return code
+
+    # Normalize newlines
+    text = code.replace('\r\n', '\n').replace('\r', '\n')
+
+    # Replace tabs with 4 spaces
+    text = text.replace('\t', ' ' * 4)
+
+    # Strip trailing spaces on each line
+    lines = [ln.rstrip() for ln in text.split('\n')]
+
+    # Collapse multiple blank lines
+    new_lines: list[str] = []
+    blank = False
+    for ln in lines:
+        if ln == "":
+            if not blank:
+                new_lines.append("")
+            blank = True
+        else:
+            new_lines.append(ln)
+            blank = False
+
+    # Remove leading/trailing blank lines
+    while new_lines and new_lines[0] == "":
+        new_lines.pop(0)
+    while new_lines and new_lines[-1] == "":
+        new_lines.pop()
+
+    return "\n".join(new_lines)
+
+
 def format_code(
     code: str,
     language: Literal["python", "javascript", "typescript", ""] = "python",

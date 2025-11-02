@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
 from app.core.postprocess import postprocess
-from app.core.formatter import format_code, should_format
+from app.core.formatter import format_code, should_format, normalize_python_code
 from app.core.security import require_api_key
 from app.middleware.telemetry import get_telemetry_collector
 from app.schemas.completion import DEFAULT_STOPS_PY, CompleteRequest, CompleteResponse
@@ -34,9 +34,15 @@ def complete(req: CompleteRequest):
         if settings.AUTO_FORMAT and should_format(completion, req.language):
             formatted, error = format_code(completion, req.language)
             if error:
-                logger.warning(f"Format failed: {error}, using unformatted")
+                logger.warning(f"Format failed: {error}, using normalization fallback")
+                if req.language == "python":
+                    completion = normalize_python_code(completion)
             else:
                 completion = formatted
+        else:
+            # If auto-format is disabled, still apply a lightweight normalization for Python
+            if req.language == "python":
+                completion = normalize_python_code(completion)
         
         # Record telemetry
         latency_ms = (time.time() - start_time) * 1000
@@ -86,6 +92,20 @@ def complete_stream(req: CompleteRequest, request: Request):
             final = (
                 postprocess(req.prefix, req.suffix, raw, stops) if settings.POSTPROCESS_ENABLED else raw
             )
+
+            # Apply same formatting/normalization logic as non-streaming endpoint
+            if settings.AUTO_FORMAT and should_format(final, req.language):
+                formatted, error = format_code(final, req.language)
+                if error:
+                    logger.warning(f"Format failed in stream: {error}, using normalization fallback")
+                    if req.language == "python":
+                        final = normalize_python_code(final)
+                else:
+                    final = formatted
+            else:
+                if req.language == "python":
+                    final = normalize_python_code(final)
+
             yield f"event: final\ndata: {json.dumps({'completion': final})}\n\n"
             yield "event: done\ndata: {}\n\n"
         except Exception as e:
