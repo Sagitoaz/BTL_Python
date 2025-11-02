@@ -41,7 +41,7 @@
     "code-assistant"
   ],
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.104.0"
   },
   "main": "out/extension.js",
   "activationEvents": [
