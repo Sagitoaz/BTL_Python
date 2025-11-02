@@ -87,19 +87,10 @@ def last_line_indent(prefix: str) -> int:
 def align_first_line(prefix: str, completion: str) -> str:
     """
     Align the first line of completion with the indentation of the last line in prefix.
+    Preserve relative indentation for multi-line completions.
     
-    KEY INSIGHT: If prefix ends with whitespace (indent), completion should start WITHOUT indent.
-    If prefix ends with non-whitespace, completion needs proper indentation.
-    
-    Example 1:
-      prefix = "def add(a, b):\n    "  # ends with 4 spaces
-      completion = "return a + b"       # no indent needed
-      → "return a + b" (correct)
-    
-    Example 2:
-      prefix = "def add(a, b):"  # ends with colon
-      completion = "return a + b"
-      → "    return a + b" (need 4 spaces)
+    LIMITATIONS: Python dedent keywords (elif, else, except, finally) are not automatically
+    handled. Users should manually position cursor at the correct indentation level.
     """
     if not completion:
         return completion
@@ -114,42 +105,44 @@ def align_first_line(prefix: str, completion: str) -> str:
     # Calculate base indentation from last line of prefix
     base = last_line_indent(prefix)
     
+    # Find the minimum indentation in completion (excluding empty lines)
+    min_indent = float('inf')
+    for ln in lines:
+        if ln.strip():  # Non-empty line
+            indent = len(ln) - len(ln.lstrip())
+            min_indent = min(min_indent, indent)
+    
+    if min_indent == float('inf'):
+        min_indent = 0
+    
     fixed: list[str] = []
-    first_line_original_indent = None
+    first_line_target_indent = 0
     
     for i, ln in enumerate(lines):
         # Empty lines pass through unchanged
-        if not ln.strip():
-            fixed.append(ln)
+        if ln.strip() == "":
+            fixed.append("")
             continue
         
+        # Calculate current indent and content
+        current_indent = len(ln) - len(ln.lstrip())
+        content = ln.lstrip()
+        relative_indent = current_indent - min_indent
+        
         if i == 0:
-            # First line handling
-            current_indent = len(ln) - len(ln.lstrip())
-            content = ln.lstrip()
-            
+            # First line: depends on whether prefix ends with indent
             if prefix_ends_with_indent:
-                # Prefix already has indent, don't add more
-                # But strip any indent model added
-                fixed.append(content)
-                first_line_original_indent = 0  # Track that first line has no indent
+                # Prefix already provides indent, first line needs no extra indent
+                fixed.append((" " * relative_indent) + content)
+                first_line_target_indent = 0
             else:
-                # Prefix doesn't end with indent, add base indentation
-                fixed.append((" " * base) + content)
-                first_line_original_indent = base
+                # Prefix doesn't provide indent, add base indent
+                fixed.append((" " * (base + relative_indent)) + content)
+                first_line_target_indent = base
         else:
-            # Subsequent lines: preserve relative indentation
-            current_indent = len(ln) - len(ln.lstrip())
-            content = ln.lstrip()
-            
-            # If line had indentation in original, preserve it relative to first line
-            if current_indent > 0:
-                # Add first line indent + relative indent
-                total_indent = first_line_original_indent + current_indent
-                fixed.append((" " * total_indent) + content)
-            else:
-                # No relative indent, align with first line
-                fixed.append((" " * first_line_original_indent) + content)
+            # Subsequent lines: preserve relative indentation from first line
+            # They start at column 0 (after newline), so need absolute indent
+            fixed.append((" " * (first_line_target_indent + relative_indent)) + content)
     
     return "\n".join(fixed)
 
