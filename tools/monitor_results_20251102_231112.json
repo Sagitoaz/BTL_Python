@@ -1,0 +1,123 @@
+{
+  "timestamp": "20251102_231112",
+  "server_url": "https://btl-python-r9kz.onrender.com",
+  "health": {
+    "status": "ok",
+    "model": "llama-3.3-70b-versatile",
+    "available_models": [
+      "meta-llama/llama-prompt-guard-2-22m",
+      "meta-llama/llama-guard-4-12b",
+      "moonshotai/kimi-k2-instruct-0905",
+      "qwen/qwen3-32b",
+      "openai/gpt-oss-120b",
+      "llama-3.1-8b-instant",
+      "groq/compound-mini",
+      "meta-llama/llama-4-scout-17b-16e-instruct",
+      "groq/compound",
+      "openai/gpt-oss-20b",
+      "meta-llama/llama-4-maverick-17b-128e-instruct",
+      "openai/gpt-oss-safeguard-20b",
+      "moonshotai/kimi-k2-instruct",
+      "llama-3.3-70b-versatile",
+      "allam-2-7b",
+      "whisper-large-v3-turbo",
+      "playai-tts",
+      "playai-tts-arabic",
+      "meta-llama/llama-prompt-guard-2-86m",
+      "whisper-large-v3"
+    ]
+  },
+  "metrics": {
+    "total_requests": 8,
+    "successful": 8,
+    "failed": 0,
+    "latencies": [
+      596.1093902587891,
+      2516.512155532837,
+      1701.8334865570068,
+      641.5562629699707,
+      2056.98561668396,
+      622.9333877563477,
+      730.8869361877441,
+      742.2316074371338
+    ],
+    "errors": [],
+    "completion_lengths": [
+      12,
+      48,
+      77,
+      21,
+      53,
+      11,
+      47,
+      12
+    ],
+    "markdown_detections": 0
+  },
+  "results": [
+    {
+      "status": "success",
+      "latency_ms": 596.1093902587891,
+      "completion": "return a + b",
+      "has_markdown": false,
+      "length": 12,
+      "test_name": "Simple function"
+    },
+    {
+      "status": "success",
+      "latency_ms": 2516.512155532837,
+      "completion": "else:\n    return fibonacci(n-1) + fibonacci(n-2)",
+      "has_markdown": false,
+      "length": 48,
+      "test_name": "Fibonacci"
+    },
+    {
+      "status": "success",
+      "latency_ms": 1701.8334865570068,
+      "completion": "if b == 0:\n    raise ZeroDivisionError(\"Cannot divide by zero\")\nreturn a / b\n",
+      "has_markdown": false,
+      "length": 77,
+      "test_name": "Class method"
+    },
+    {
+      "status": "success",
+      "latency_ms": 641.5562629699707,
+      "completion": "x**2 for x in numbers",
+      "has_markdown": false,
+      "length": 21,
+      "test_name": "List comprehension"
+    },
+    {
+      "status": "success",
+      "latency_ms": 2056.98561668396,
+      "completion": "ZeroDivisionError:\n    print('Cannot divide by zero')",
+      "has_markdown": false,
+      "length": 53,
+      "test_name": "Try-except block"
+    },
+    {
+      "status": "success",
+      "latency_ms": 622.9333877563477,
+      "completion": "print(user)",
+      "has_markdown": false,
+      "length": 11,
+      "test_name": "For loop with context"
+    },
+    {
+      "status": "success",
+      "latency_ms": 730.8869361877441,
+      "completion": "name: index for index, name in enumerate(names)",
+      "has_markdown": false,
+      "length": 47,
+      "test_name": "Dictionary comprehension"
+    },
+    {
+      "status": "success",
+      "latency_ms": 742.2316074371338,
+      "completion": "return x + y",
+      "has_markdown": false,
+      "length": 12,
+      "test_name": "Nested function"
+    }
+  ]
+}
