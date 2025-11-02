@@ -4,8 +4,11 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # Groq Cloud API - Get your key from console.groq.com
     GROQ_API_KEY: str = ""
-    # Recommended models: llama-3.1-70b-versatile (fast), codellama-34b-instruct (code-focused)
-    GROQ_MODEL: str = "llama-3.1-70b-versatile"
+    # Recommended models (updated Nov 2025):
+    # - llama-3.3-70b-versatile (newest, best quality)
+    # - llama-3.1-8b-instant (fastest)
+    # - mixtral-8x7b-32768 (large context)
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
     # Server configuration
     HOST: str = "0.0.0.0"
