@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     HEADERS_MIDDLEWARE: str = "X-Request-ID"
     REQUEST_ID: str = "request_id"
     POSTPROCESS_ENABLED: bool = True
+    AUTO_FORMAT: bool = True  # Auto-format completions with black/autopep8
 
     class Config:
         env_file = ".env"

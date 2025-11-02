@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.middleware.request_id import request_id_middleware
-from app.routers import completions, health
+from app.routers import completions, health, admin
 
 app = FastAPI(title="AI Code Completion Server", version="0.2")
 setup_logging()
@@ -24,3 +24,4 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(completions.router)
+app.include_router(admin.router)
