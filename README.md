@@ -1,22 +1,30 @@
 # 🤖 BTL Python - AI Code Completion Extension
 
-**GitHub Copilot-like AI code assistant for Python** - Powered by Groq Cloud LLM
+**GitHub Copilot-like AI code assistant for Python** - Powered by Groq Cloud LLM with Personalization
 
 [![Status](https://img.shields.io/badge/status-production-brightgreen)](https://btl-python-r9kz.onrender.com/health)
-[![Success Rate](https://img.shields.io/badge/success_rate-100%25-success)]()
-[![Latency](https://img.shields.io/badge/latency-<1s-blue)]()
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 ---
 
 ## ✨ Features
 
+### Core Features
 - 🤖 **Smart Code Completion**: AI-powered suggestions while you type
 - ⚡ **Fast**: Sub-second response time (after cold start)
-- 🎯 **Accurate**: 100% success rate, zero markdown artifacts
+- 🎯 **Accurate**: High success rate, zero markdown artifacts
 - 📐 **Auto-formatted**: Always returns clean, properly formatted code
 - 🛡️ **Syntax-safe**: Never generates syntax-breaking suggestions
-- 📊 **Telemetry**: Collects usage data for continuous improvement
 - ☁️ **Cloud-hosted**: 24/7 availability on Render.com
+
+### 🆕 v1.0.0: Personalization System
+- 🎨 **Learns Your Style**: Automatically detects indentation, quotes, naming conventions
+- 📊 **Incremental Learning**: Gets better with every accepted completion
+- 🔐 **Privacy-Focused**: Anonymous user IDs (SHA-256 hashing)
+- 🗑️ **GDPR Compliant**: Delete your data anytime
+- 📈 **Profile Dashboard**: View your coding style metrics
+- ⚙️ **Configurable**: Enable/disable personalization in settings
 
 ---
 
@@ -44,6 +52,32 @@ code .
 3. Wait 1-2 seconds
 4. See ghost text suggestion
 5. Press **Tab** or **→** to accept
+6. Your style is learned automatically!
+
+### View Your Coding Profile
+1. Press `Cmd/Ctrl+Shift+P`
+2. Run: `BTL: View My Coding Profile`
+3. See your detected coding style (indent, quotes, naming, etc.)
+
+### Clear Your Data (GDPR)
+1. Press `Cmd/Ctrl+Shift+P`
+2. Run: `BTL: Clear My Coding Profile`
+3. All your personalization data is deleted
+
+---
+
+## ⚙️ Settings
+
+Open VS Code settings (`Cmd/Ctrl + ,`) and search for "BTL":
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `btl.serverUrl` | Cloud server | Backend API endpoint |
+| `btl.apiKey` | `5conmeo` | Authentication key |
+| `btl.timeoutMs` | `15000` | Request timeout |
+| `btl.enablePersonalization` | `true` | Enable style learning |
+| `btl.sendFeedback` | `true` | Send accept/reject feedback |
+| `btl.enableStreaming` | `false` | Streaming mode (experimental) |
 
 ---
 

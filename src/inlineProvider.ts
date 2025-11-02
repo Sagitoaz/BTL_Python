@@ -1,9 +1,17 @@
 import * as vscode from 'vscode';
+import * as crypto from 'crypto';
 
 const DEFAULT_STOPS_PY = ["\n\n", "\n\n```", "\n\n##", "\n\n# ", "\n\n\"\"\"", "\n\n'''"];
 const DEFAULT_TEMPERATURE = 0.2;
 const DEFAULT_MAX_TOKENS = 128;
 const MAX_SIDE_CHARS = 4000;
+
+// Generate anonymous user ID based on machine ID
+function getUserId(): string {
+  const machineId = vscode.env.machineId;
+  const hash = crypto.createHash('sha256').update(machineId).digest('hex');
+  return hash.substring(0, 16); // Use first 16 chars for brevity
+}
 
 function getPrefixSuffix(doc: vscode.TextDocument, pos: vscode.Position) {
   const start = new vscode.Position(0, 0);
@@ -26,13 +34,15 @@ async function fetchCompletion(
   serverUrl: string,
   apiKey: string | undefined,
   body: any,
-  signal: AbortSignal
+  signal: AbortSignal,
+  userId: string | null = null
 ): Promise<string | null> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "Accept": "application/json",
   };
   if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+  if (userId) headers["X-User-ID"] = userId;
 
   try {
     const url = serverUrl.replace(/\/+$/, "") + "/complete";
@@ -88,13 +98,15 @@ async function fetchStreamCompletion(
   serverUrl: string,
   apiKey: string | undefined,
   body: any,
-  signal: AbortSignal
+  signal: AbortSignal,
+  userId: string | null = null
 ): Promise<string | null> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "Accept": "text/event-stream",
   };
   if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+  if (userId) headers["X-User-ID"] = userId;
 
   try {
     const url = serverUrl.replace(/\/+$/, "") + "/complete_stream";
@@ -258,12 +270,86 @@ function tidyCompletion(raw: string, prefix: string, suffix: string, baseIndent:
 
 
 export class InlineProvider implements vscode.InlineCompletionItemProvider {
+  private userId: string | null = null;
+  private enablePersonalization: boolean = true;
+  private sendFeedback: boolean = true;
+  private pendingCompletions: Map<string, { text: string, prefix: string, timestamp: number }> = new Map();
+
   constructor(
     private readonly serverUrl: string,
     private readonly apiKey: string | undefined,
     private readonly enableStreaming: boolean,
     private readonly timeoutMs: number
-  ) { }
+  ) {
+    // Get user ID and personalization settings
+    const config = vscode.workspace.getConfiguration('btl');
+    this.enablePersonalization = config.get('enablePersonalization', true);
+    this.sendFeedback = config.get('sendFeedback', true);
+    
+    if (this.enablePersonalization) {
+      this.userId = getUserId();
+      console.log(`[BTL] User ID for personalization: ${this.userId}`);
+    }
+  }
+
+  private async sendCompletionFeedback(
+    completionText: string,
+    prefix: string,
+    accepted: boolean,
+    acceptTimeMs: number | null = null
+  ): Promise<void> {
+    if (!this.sendFeedback || !this.userId) return;
+
+    try {
+      const url = this.serverUrl.replace(/\/+$/, "") + "/feedback/completion";
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "X-User-ID": this.userId,
+      };
+      if (this.apiKey) headers["Authorization"] = `Bearer ${this.apiKey}`;
+
+      const body = {
+        request_id: "", // Not tracking request IDs for now
+        accepted,
+        completion_text: completionText,
+        prefix,
+        accept_time_ms: acceptTimeMs,
+      };
+
+      await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+      
+      console.log(`[BTL] Feedback sent: ${accepted ? 'accepted' : 'rejected'}`);
+    } catch (err) {
+      console.error('[BTL] Failed to send feedback:', err);
+    }
+  }
+
+  public async handleAcceptance(completionId: string): Promise<void> {
+    const completion = this.pendingCompletions.get(completionId);
+    if (!completion) return;
+
+    const acceptTime = Date.now() - completion.timestamp;
+    await this.sendCompletionFeedback(
+      completion.text,
+      completion.prefix,
+      true,
+      acceptTime
+    );
+
+    this.pendingCompletions.delete(completionId);
+    
+    // Clean up old pending completions (older than 5 minutes)
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    for (const [id, comp] of this.pendingCompletions.entries()) {
+      if (comp.timestamp < fiveMinutesAgo) {
+        this.pendingCompletions.delete(id);
+      }
+    }
+  }
 
   async provideInlineCompletionItems(
     document: vscode.TextDocument,
@@ -290,8 +376,8 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
       };
 
       const completion = this.enableStreaming
-        ? await fetchStreamCompletion(this.serverUrl, this.apiKey, requestBody, controller.signal)
-        : await fetchCompletion(this.serverUrl, this.apiKey, requestBody, controller.signal);
+        ? await fetchStreamCompletion(this.serverUrl, this.apiKey, requestBody, controller.signal, this.userId)
+        : await fetchCompletion(this.serverUrl, this.apiKey, requestBody, controller.signal, this.userId);
 
       if (!completion) return null;
 
@@ -332,6 +418,24 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
       const range = new vscode.Range(start, end);
 
       const item = new vscode.InlineCompletionItem(finalText, range);
+      
+      // Track this completion for feedback
+      const completionId = `${Date.now()}_${Math.random()}`;
+      if (this.sendFeedback) {
+        this.pendingCompletions.set(completionId, {
+          text: finalText,
+          prefix,
+          timestamp: Date.now()
+        });
+        
+        // Setup acceptance tracking via command
+        (item as any).command = {
+          command: 'btl.trackAcceptance',
+          title: '',
+          arguments: [completionId]
+        };
+      }
+      
       return { items: [item] };
 
     } catch {
