@@ -87,18 +87,36 @@ def last_line_indent(prefix: str) -> int:
 def align_first_line(prefix: str, completion: str) -> str:
     """
     Align the first line of completion with the indentation of the last line in prefix.
-    Preserves indentation of subsequent lines relative to the first line.
+    
+    KEY INSIGHT: If prefix ends with whitespace (indent), completion should start WITHOUT indent.
+    If prefix ends with non-whitespace, completion needs proper indentation.
+    
+    Example 1:
+      prefix = "def add(a, b):\n    "  # ends with 4 spaces
+      completion = "return a + b"       # no indent needed
+      → "return a + b" (correct)
+    
+    Example 2:
+      prefix = "def add(a, b):"  # ends with colon
+      completion = "return a + b"
+      → "    return a + b" (need 4 spaces)
     """
     if not completion:
         return completion
     
-    base = last_line_indent(prefix)
     lines = completion.splitlines()
-    
     if not lines:
         return completion
     
+    # Check if prefix ends with whitespace (indent already provided)
+    prefix_ends_with_indent = prefix and prefix[-1] in (' ', '\t')
+    
+    # Calculate base indentation from last line of prefix
+    base = last_line_indent(prefix)
+    
     fixed: list[str] = []
+    first_line_original_indent = None
+    
     for i, ln in enumerate(lines):
         # Empty lines pass through unchanged
         if not ln.strip():
@@ -106,20 +124,32 @@ def align_first_line(prefix: str, completion: str) -> str:
             continue
         
         if i == 0:
-            # First line: align to base indent
-            content = ln.lstrip()
-            fixed.append((" " * base) + content)
-        else:
-            # Subsequent lines: preserve their relative indentation
-            # But ensure they're at least as indented as the base
+            # First line handling
             current_indent = len(ln) - len(ln.lstrip())
-            if current_indent < base:
-                # Line is under-indented, fix it
-                content = ln.lstrip()
-                fixed.append((" " * base) + content)
+            content = ln.lstrip()
+            
+            if prefix_ends_with_indent:
+                # Prefix already has indent, don't add more
+                # But strip any indent model added
+                fixed.append(content)
+                first_line_original_indent = 0  # Track that first line has no indent
             else:
-                # Line has proper indentation, keep it
-                fixed.append(ln)
+                # Prefix doesn't end with indent, add base indentation
+                fixed.append((" " * base) + content)
+                first_line_original_indent = base
+        else:
+            # Subsequent lines: preserve relative indentation
+            current_indent = len(ln) - len(ln.lstrip())
+            content = ln.lstrip()
+            
+            # If line had indentation in original, preserve it relative to first line
+            if current_indent > 0:
+                # Add first line indent + relative indent
+                total_indent = first_line_original_indent + current_indent
+                fixed.append((" " * total_indent) + content)
+            else:
+                # No relative indent, align with first line
+                fixed.append((" " * first_line_original_indent) + content)
     
     return "\n".join(fixed)
 
