@@ -80,13 +80,30 @@ def complete(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unknown error: {e}") from e
-def complete_stream(req: CompleteRequest, request: Request):
+
+
+@router.post("/complete_stream", dependencies=[Depends(require_api_key)])
+def complete_stream(
+    req: CompleteRequest,
+    request: Request,
+    x_user_id: Optional[str] = Header(None, description="User identifier for personalization")
+):
     """
     Streaming endpoint - NOTE: Groq API returns full response, we simulate streaming.
     For true streaming, consider using Groq's streaming API in future.
     """
     req_id = new_request_id()
-    prompt = build_prompt(req)
+    
+    # Get personalized style hints if user_id provided
+    user_style_hints = ""
+    if x_user_id:
+        try:
+            profiler = get_profiler()
+            user_style_hints = profiler.get_style_hints(x_user_id)
+        except Exception as e:
+            logger.warning(f"Failed to get style hints: {e}")
+    
+    prompt = build_prompt(req, user_style_hints)
     stops = (req.stop or []) + DEFAULT_STOPS_PY
     
     def gen():
