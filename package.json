@@ -84,6 +84,13 @@
           "type": "boolean",
           "default": true,
           "description": "Send accept/reject feedback to improve suggestions"
+        },
+        "btl.debounceMs": {
+          "type": "number",
+          "default": 200,
+          "minimum": 0,
+          "maximum": 2000,
+          "description": "Delay in milliseconds before triggering completion (lower = faster suggestions)"
         }
       }
     },

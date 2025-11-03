@@ -357,7 +357,8 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
     context: vscode.InlineCompletionContext,
     token: vscode.CancellationToken
   ): Promise<vscode.InlineCompletionList | null> {
-    // Không spam: chỉ gợi ý khi người dùng vừa gõ (typing trigger)
+    // Always provide suggestions when requested (like GitHub Copilot)
+    // No filtering by trigger kind - let VS Code decide when to show
 
     const { prefix, suffix } = getPrefixSuffix(document, position);
 
