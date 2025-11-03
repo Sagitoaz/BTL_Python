@@ -5,6 +5,18 @@ All notable changes to the BTL Python AI Coder extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-11-03
+
+### Fixed
+- **Inline completion trigger**: Removed trigger type filtering - suggestions now appear while typing on same line (like GitHub Copilot behavior)
+- Extension now provides suggestions continuously as you type, not just on new lines
+- Better responsiveness: completions trigger automatically without needing to press Enter
+
+### Added
+- New setting `btl.debounceMs` (default: 200ms) to control suggestion delay
+  - Lower value = faster suggestions
+  - Range: 0-2000ms
+
 ## [1.0.0] - 2025-01-XX
 
 ### Added
