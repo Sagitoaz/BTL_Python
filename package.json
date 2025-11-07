@@ -2,7 +2,7 @@
   "name": "btl-python-ai-coder",
   "displayName": "BTL AI Coder (Python & C++)",
   "description": "🤖 Personalized AI code completion for Python & C++ powered by Groq - GitHub Copilot alternative with user profiling",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "publisher": "Sagito",
   "author": {
     "name": "Sagito",
