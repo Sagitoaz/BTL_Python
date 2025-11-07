@@ -18,10 +18,14 @@ export function activate(context: vscode.ExtensionContext) {
     timeoutMs
   );
 
-  // áp cho Python trước; muốn all languages thì dùng: { pattern: "**/*" }
+  // Register for both Python and C++
   const selector: vscode.DocumentSelector = [
     { language: "python", scheme: "file" },
     { language: "python", scheme: "untitled" },
+    { language: "cpp", scheme: "file" },
+    { language: "cpp", scheme: "untitled" },
+    { language: "c", scheme: "file" },
+    { language: "c", scheme: "untitled" },
   ];
 
   const disposable = vscode.languages.registerInlineCompletionItemProvider(

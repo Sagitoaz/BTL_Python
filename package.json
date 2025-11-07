@@ -53,7 +53,7 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "BTL Python AI Coder",
+      "title": "BTL AI Coder (Python & C++)",
       "properties": {
         "btl.serverUrl": {
           "type": "string",
