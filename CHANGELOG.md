@@ -5,6 +5,23 @@ All notable changes to the BTL Python AI Coder extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-11-07
+
+### Added
+- **C++ Language Support**: Extension now supports C++ code completion alongside Python
+- **Multi-Language Activation**: Automatically activates for `.cpp`, `.hpp`, `.h`, `.cc`, `.c` files
+- **C++-Specific Features**:
+  - Tailored prompts with C++ syntax examples (functions, loops, STL)
+  - C++-specific stop sequences (`//`, `/*`, `#endif`)
+  - clang-format integration for code formatting
+  - Lightweight normalization fallback when clang-format unavailable
+- **Updated Extension Name**: "BTL AI Coder (Python & C++)" to reflect multi-language support
+- **Personalization for C++**: User profiling system now works for both Python and C++ code
+
+### Changed
+- Backend prompt builder enhanced with language-specific few-shot examples
+- Formatter module expanded to support clang-format alongside black/autopep8
+
 ## [1.0.1] - 2025-11-03
 
 ### Fixed
