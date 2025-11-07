@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 # Groq API only allows max 4 stop sequences
 DEFAULT_STOPS_PY = ["\n\n```", "\n\n##", '\n\n"""', "\n\n'''"]
+DEFAULT_STOPS_CPP = ["\n\n```", "\n\n//", "\n\n/*", "\n\n#endif"]
 DEFAULT_MAX_TOKENS = 128
 DEFAULT_TEMPERATURE = 0.2
 

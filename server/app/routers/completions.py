@@ -8,10 +8,10 @@ from typing import Optional
 
 from app.core.config import settings
 from app.core.postprocess import postprocess
-from app.core.formatter import format_code, should_format, normalize_python_code
+from app.core.formatter import format_code, should_format, normalize_python_code, normalize_cpp_code
 from app.core.security import require_api_key
 from app.middleware.telemetry import get_telemetry_collector
-from app.schemas.completion import DEFAULT_STOPS_PY, CompleteRequest, CompleteResponse
+from app.schemas.completion import DEFAULT_STOPS_PY, DEFAULT_STOPS_CPP, CompleteRequest, CompleteResponse
 from app.services.groq import build_prompt, call_groq_completion, new_request_id
 from app.services.user_profiling import get_profiler
 
@@ -37,7 +37,11 @@ def complete(
             logger.warning(f"Failed to get style hints: {e}")
     
     prompt = build_prompt(req, user_style_hints)
-    stops = (req.stop or []) + DEFAULT_STOPS_PY
+    
+    # Choose appropriate stop sequences based on language
+    default_stops = DEFAULT_STOPS_CPP if req.language in ["cpp", "c++", "c"] else DEFAULT_STOPS_PY
+    stops = (req.stop or []) + default_stops
+    
     try:
         raw = call_groq_completion(prompt, req.max_tokens, req.temperature, stops)
         completion = (
@@ -51,12 +55,16 @@ def complete(
                 logger.warning(f"Format failed: {error}, using normalization fallback")
                 if req.language == "python":
                     completion = normalize_python_code(completion)
+                elif req.language in ["cpp", "c++", "c"]:
+                    completion = normalize_cpp_code(completion)
             else:
                 completion = formatted
         else:
-            # If auto-format is disabled, still apply a lightweight normalization for Python
+            # If auto-format is disabled, still apply lightweight normalization
             if req.language == "python":
                 completion = normalize_python_code(completion)
+            elif req.language in ["cpp", "c++", "c"]:
+                completion = normalize_cpp_code(completion)
         
         # Record telemetry
         latency_ms = (time.time() - start_time) * 1000
@@ -104,7 +112,10 @@ def complete_stream(
             logger.warning(f"Failed to get style hints: {e}")
     
     prompt = build_prompt(req, user_style_hints)
-    stops = (req.stop or []) + DEFAULT_STOPS_PY
+    
+    # Choose appropriate stop sequences based on language
+    default_stops = DEFAULT_STOPS_CPP if req.language in ["cpp", "c++", "c"] else DEFAULT_STOPS_PY
+    stops = (req.stop or []) + default_stops
     
     def gen():
         yield f"event: meta\ndata: {json.dumps({'request_id': req_id})}\n\n"
@@ -129,11 +140,15 @@ def complete_stream(
                     logger.warning(f"Format failed in stream: {error}, using normalization fallback")
                     if req.language == "python":
                         final = normalize_python_code(final)
+                    elif req.language in ["cpp", "c++", "c"]:
+                        final = normalize_cpp_code(final)
                 else:
                     final = formatted
             else:
                 if req.language == "python":
                     final = normalize_python_code(final)
+                elif req.language in ["cpp", "c++", "c"]:
+                    final = normalize_cpp_code(final)
 
             yield f"event: final\ndata: {json.dumps({'completion': final})}\n\n"
             yield "event: done\ndata: {}\n\n"

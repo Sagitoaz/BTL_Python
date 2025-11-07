@@ -20,6 +20,7 @@ def build_prompt(req: CompleteRequest, user_style_hints: str = "") -> str:
     Build an enhanced prompt with clear instructions and few-shot examples.
     Optionally includes personalized style hints based on user's coding patterns.
     Optimized for Groq's fast inference.
+    Supports multiple languages including Python and C++.
     """
     rules = [
         f"Return ONLY the missing {req.language} code that should appear at the cursor position.",
@@ -28,16 +29,41 @@ def build_prompt(req: CompleteRequest, user_style_hints: str = "") -> str:
         "Do not add explanations, comments, or docstrings unless they are part of the actual code logic.",
         "Respect the exact indentation from the last line before the cursor.",
         "Do not repeat any code that already exists in the prefix or suffix.",
-        "If the prefix ends with ':', indent the completion by 4 spaces (Python block).",
-        "Keep completions concise but complete - finish the current logical block.",
     ]
+    
+    # Language-specific rules
+    if req.language == "python":
+        rules.append("If the prefix ends with ':', indent the completion by 4 spaces (Python block).")
+    elif req.language in ["cpp", "c++", "c"]:
+        rules.append("Follow C++ syntax strictly, including semicolons, braces, and proper type declarations.")
+        rules.append("Use appropriate C++ standard library headers and namespaces.")
+    
+    rules.append("Keep completions concise but complete - finish the current logical block.")
     
     # Add user style hints if available
     if user_style_hints:
         rules.insert(3, user_style_hints)
     
-    # Few-shot examples
-    examples = f"""
+    # Few-shot examples based on language
+    if req.language in ["cpp", "c++", "c"]:
+        examples = f"""
+EXAMPLE 1 - Function body (C++):
+<prefix>int add(int a, int b) {{\n    </prefix>
+<suffix>\n}}\n\nint multiply(int x, int y)</suffix>
+OUTPUT: return a + b;
+
+EXAMPLE 2 - For loop (C++):
+<prefix>for (int i = 0; i < 10; i++) {{\n    </prefix>
+<suffix>\n}}\nstd::cout << "Done";</suffix>
+OUTPUT: std::cout << i << std::endl;
+
+EXAMPLE 3 - Vector initialization (C++):
+<prefix>#include <vector>\nstd::vector<int> numbers = {{</prefix>
+<suffix>}};\nfor (auto n : numbers)</suffix>
+OUTPUT: 1, 2, 3, 4, 5
+"""
+    else:  # Python
+        examples = f"""
 EXAMPLE 1 - Function body:
 <prefix>def add(a, b):\n    </prefix>
 <suffix>\n\ndef multiply(x, y):</suffix>

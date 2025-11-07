@@ -1,6 +1,6 @@
 """
 Code formatter integration for auto-formatting completions.
-Supports black (Python) and prettier (JavaScript/TypeScript).
+Supports black (Python), prettier (JavaScript/TypeScript), and clang-format (C++).
 """
 import subprocess
 import tempfile
@@ -121,10 +121,67 @@ def normalize_python_code(code: str) -> str:
     return "\n".join(new_lines)
 
 
+def format_cpp_code(code: str) -> tuple[str, Optional[str]]:
+    """
+    Format C++ code using clang-format.
+    Returns (formatted_code, error_message).
+    If formatting fails, returns original code with error message.
+    """
+    try:
+        result = subprocess.run(
+            ['clang-format', '--style=LLVM'],
+            input=code,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        if result.returncode == 0:
+            return result.stdout, None
+        else:
+            return code, result.stderr or "clang-format failed"
+            
+    except FileNotFoundError:
+        return code, "clang-format not installed"
+    except subprocess.TimeoutExpired:
+        return code, "clang-format timeout"
+    except Exception as e:
+        return code, f"Formatting error: {str(e)}"
+
+
+def normalize_cpp_code(code: str) -> str:
+    """
+    Lightweight normalization for C++ code when clang-format is not available.
+    
+    - Convert tabs to 2 spaces (C++ convention)
+    - Strip trailing whitespace
+    - Normalize newlines
+    """
+    if not code:
+        return code
+    
+    # Normalize newlines
+    text = code.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # Replace tabs with 2 spaces (C++ convention)
+    text = text.replace('\t', '  ')
+    
+    # Strip trailing spaces on each line
+    lines = [ln.rstrip() for ln in text.split('\n')]
+    
+    # Remove leading/trailing blank lines
+    while lines and lines[0] == "":
+        lines.pop(0)
+    while lines and lines[-1] == "":
+        lines.pop()
+    
+    return "\n".join(lines)
+
+
 def format_code(
     code: str,
-    language: Literal["python", "javascript", "typescript", ""] = "python",
-    formatter: Literal["black", "autopep8", "prettier", "auto"] = "auto"
+    language: Literal["python", "javascript", "typescript", "cpp", "c++", "c", ""] = "python",
+    formatter: Literal["black", "autopep8", "prettier", "clang-format", "auto"] = "auto"
 ) -> tuple[str, Optional[str]]:
     """
     Auto-format code based on language.
@@ -147,6 +204,8 @@ def format_code(
             formatter = "black"
         elif language in ("javascript", "typescript"):
             formatter = "prettier"
+        elif language in ("cpp", "c++", "c"):
+            formatter = "clang-format"
         else:
             return code, None  # No formatter for this language
     
@@ -155,6 +214,8 @@ def format_code(
         return format_python_code(code)
     elif formatter == "autopep8":
         return format_with_autopep8(code)
+    elif formatter == "clang-format":
+        return format_cpp_code(code)
     elif formatter == "prettier":
         return code, "prettier not yet implemented"
     else:
@@ -171,7 +232,7 @@ def should_format(code: str, language: str) -> bool:
         return False
     
     # Skip if not a supported language
-    if language not in ("python", "javascript", "typescript"):
+    if language not in ("python", "javascript", "typescript", "cpp", "c++", "c"):
         return False
     
     # Skip if it's just a single expression

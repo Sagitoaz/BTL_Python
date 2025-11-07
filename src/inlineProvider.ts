@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as crypto from 'crypto';
 
 const DEFAULT_STOPS_PY = ["\n\n", "\n\n```", "\n\n##", "\n\n# ", "\n\n\"\"\"", "\n\n'''"];
+const DEFAULT_STOPS_CPP = ["\n\n", "\n\n```", "\n\n//", "\n\n/*", "\n\n#endif"];
 const DEFAULT_TEMPERATURE = 0.2;
 const DEFAULT_MAX_TOKENS = 128;
 const MAX_SIDE_CHARS = 4000;
@@ -367,13 +368,22 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
     token.onCancellationRequested(() => controller.abort());
 
     try {
+      // Map VS Code language IDs to backend language names
+      let langId = document.languageId;
+      if (langId === 'cpp' || langId === 'c') {
+        langId = 'cpp';
+      }
+      
+      // Choose appropriate stop sequences
+      const stopSeqs = (langId === 'cpp' || langId === 'c') ? DEFAULT_STOPS_CPP : DEFAULT_STOPS_PY;
+      
       const requestBody = {
         prefix,
         suffix,
-        language: document.languageId,
+        language: langId,
         temperature: DEFAULT_TEMPERATURE,
         max_tokens: DEFAULT_MAX_TOKENS,
-        stop: document.languageId === 'python' ? DEFAULT_STOPS_PY : [],
+        stop: stopSeqs,
       };
 
       const completion = this.enableStreaming
