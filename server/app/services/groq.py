@@ -23,73 +23,97 @@ def build_prompt(req: CompleteRequest, user_style_hints: str = "") -> str:
     Supports multiple languages including Python and C++.
     """
     rules = [
-        f"Return ONLY the missing {req.language} code that should appear at the cursor position.",
-        "CRITICAL: Never use markdown code blocks, backticks (```), or any formatting markers.",
-        "Output must be pure, executable code that can be inserted directly into the file.",
-        "Do not add explanations, comments, or docstrings unless they are part of the actual code logic.",
-        "Respect the exact indentation from the last line before the cursor.",
-        "Do not repeat any code that already exists in the prefix or suffix.",
+        f"You are an expert {req.language} coding assistant. Complete the code at <cursor/> position.",
+        "CRITICAL: Return ONLY executable code - NO markdown, NO backticks (```), NO explanations.",
+        "Output must be pure code that can be inserted directly into the file.",
+        "Analyze the prefix and suffix context carefully to understand the intent.",
+        "Maintain consistent indentation - match the last line's indentation level.",
+        "DO NOT repeat code that already exists in prefix or suffix.",
+        "Prefer concise, idiomatic solutions over verbose code.",
     ]
     
     # Language-specific rules
     if req.language == "python":
-        rules.append("If the prefix ends with ':', indent the completion by 4 spaces (Python block).")
+        rules.append("Python: After ':' indent by 4 spaces. Use snake_case for variables/functions.")
+        rules.append("Python: Prefer list comprehensions and built-in functions when appropriate.")
     elif req.language in ["cpp", "c++", "c"]:
-        rules.append("Follow C++ syntax strictly, including semicolons, braces, and proper type declarations.")
-        rules.append("Use appropriate C++ standard library headers and namespaces.")
-    
-    rules.append("Keep completions concise but complete - finish the current logical block.")
+        rules.append("C++: Include semicolons, proper braces, and type declarations.")
+        rules.append("C++: Use C++ idioms: auto, range-based for, STL containers.")
+        rules.append("C++: Prefer std:: prefix for standard library (unless 'using namespace std' in prefix).")
     
     # Add user style hints if available
     if user_style_hints:
-        rules.insert(3, user_style_hints)
+        rules.append(f"USER STYLE PREFERENCES: {user_style_hints}")
     
-    # Few-shot examples based on language
+    # Enhanced few-shot examples based on language
     if req.language in ["cpp", "c++", "c"]:
-        examples = f"""
-EXAMPLE 1 - Function body (C++):
-<prefix>int add(int a, int b) {{\n    </prefix>
-<suffix>\n}}\n\nint multiply(int x, int y)</suffix>
+        examples = """
+EXAMPLE 1 - Inline completion (C++):
+<prefix>int factorial(int n) { return </prefix>
+<suffix>; }</suffix>
+OUTPUT: (n <= 1) ? 1 : n * factorial(n - 1)
+
+EXAMPLE 2 - Multi-line function (C++):
+<prefix>void printVector(const std::vector<int>& vec) {
+    </prefix>
+<suffix>
+}
+
+int main()</suffix>
+OUTPUT: for (const auto& val : vec) {
+        std::cout << val << " ";
+    }
+    std::cout << std::endl;
+
+EXAMPLE 3 - Class method (C++):
+<prefix>class Calculator {
+public:
+    int add(int a, int b) {
+        </prefix>
+<suffix>
+    }
+};</suffix>
 OUTPUT: return a + b;
-
-EXAMPLE 2 - For loop (C++):
-<prefix>for (int i = 0; i < 10; i++) {{\n    </prefix>
-<suffix>\n}}\nstd::cout << "Done";</suffix>
-OUTPUT: std::cout << i << std::endl;
-
-EXAMPLE 3 - Vector initialization (C++):
-<prefix>#include <vector>\nstd::vector<int> numbers = {{</prefix>
-<suffix>}};\nfor (auto n : numbers)</suffix>
-OUTPUT: 1, 2, 3, 4, 5
 """
     else:  # Python
-        examples = f"""
-EXAMPLE 1 - Function body:
-<prefix>def add(a, b):\n    </prefix>
-<suffix>\n\ndef multiply(x, y):</suffix>
-OUTPUT: return a + b
+        examples = """
+EXAMPLE 1 - Inline completion (Python):
+<prefix>def is_even(n): return </prefix>
+<suffix>
 
-EXAMPLE 2 - Continue statement:
-<prefix>if user.is_authenticated:\n    </prefix>
-<suffix>\nelse:\n    return redirect('/login')</suffix>
-OUTPUT: return render_template('dashboard.html')
+def is_odd(n):</suffix>
+OUTPUT: n % 2 == 0
 
-EXAMPLE 3 - List comprehension:
-<prefix>numbers = [1, 2, 3, 4, 5]\nsquares = [</prefix>
-<suffix>]\nprint(squares)</suffix>
-OUTPUT: x**2 for x in numbers
+EXAMPLE 2 - Multi-line function (Python):
+<prefix>def find_max(numbers):
+    </prefix>
+<suffix>
+
+result = find_max([1, 5, 3])</suffix>
+OUTPUT: if not numbers:
+        return None
+    return max(numbers)
+
+EXAMPLE 3 - List comprehension (Python):
+<prefix>fruits = ['apple', 'banana', 'cherry']
+uppercase = [</prefix>
+<suffix>]
+print(uppercase)</suffix>
+OUTPUT: f.upper() for f in fruits
 """
     
+    # Build final prompt with enhanced context
     return (
         f"You are an expert {req.language} code completion AI.\n"
-        "Your ONLY job is to complete the code at the cursor position.\n\n"
-        "RULES (follow ALL strictly):\n- " + "\n- ".join(rules) + "\n\n"
-        + examples + "\n"
-        "NOW complete the following code at <cursor/> position:\n\n"
+        "Task: Complete code at <cursor/> position using surrounding context.\n\n"
+        "STRICT RULES:\n" + "\n".join(f"- {r}" for r in rules) + "\n\n"
+        "EXAMPLES (learn the pattern):\n" + examples + "\n"
+        "═══════════════════════════════════════\n"
+        "NOW COMPLETE THIS CODE:\n\n"
         f"<prefix>\n{req.prefix}\n</prefix>\n\n"
         f"<suffix>\n{req.suffix}\n</suffix>\n\n"
         "<cursor/>\n\n"
-        "OUTPUT (raw code only, NO markdown):\n"
+        "YOUR COMPLETION (raw code only):\n"
     )
 
 

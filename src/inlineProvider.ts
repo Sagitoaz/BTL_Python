@@ -3,9 +3,9 @@ import * as crypto from 'crypto';
 
 const DEFAULT_STOPS_PY = ["\n\n", "\n\n```", "\n\n##", "\n\n# ", "\n\n\"\"\"", "\n\n'''"];
 const DEFAULT_STOPS_CPP = ["\n\n", "\n\n```", "\n\n//", "\n\n/*", "\n\n#endif"];
-const DEFAULT_TEMPERATURE = 0.2;
-const DEFAULT_MAX_TOKENS = 128;
-const MAX_SIDE_CHARS = 4000;
+const DEFAULT_TEMPERATURE = 0.3; // Increase for more creative suggestions
+const DEFAULT_MAX_TOKENS = 256; // Increase for longer completions
+const MAX_SIDE_CHARS = 6000; // Increase context window
 
 // Generate anonymous user ID based on machine ID
 function getUserId(): string {
@@ -253,18 +253,53 @@ function tidyCompletion(raw: string, prefix: string, suffix: string, baseIndent:
     s = s.slice(ol);
   }
 
-  // nếu ngay trước caret là ':', tạo block => bắt buộc newline + indent 4
-  if (needsBlockIndent(prefix)) {
-    if (s.startsWith("\n")) s = s.replace(/^\n(\s*)?/, "\n" + baseIndent + "    ");
-    else s = "\n" + baseIndent + "    " + s;
-  } else if (atEOL && !s.startsWith("\n")) {
-    // nếu caret ở cuối dòng và completion bắt đầu bằng ký tự nội dung => xuống dòng + giữ indent hiện tại
-    s = "\n" + baseIndent + s;
-  } else {
-    // nếu đang ở dòng chỉ có indent, thêm indent cho dòng đầu
-    if (/^[^\s]/.test(s) && /^\s*$/.test(baseIndent)) s = baseIndent + s;
+  // Remove leading/trailing whitespace-only lines
+  s = s.replace(/^\n+/, '').replace(/\n+$/, '');
+
+  // Smart indentation for multi-line completions
+  const lines = s.split('\n');
+  const processedLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    
+    if (i === 0) {
+      // First line: handle based on context
+      if (needsBlockIndent(prefix)) {
+        // Python block (after ':') - indent by 4 spaces
+        line = '    ' + line.trimStart();
+        processedLines.push('\n' + baseIndent + line);
+      } else if (atEOL) {
+        // At end of line - can be inline or newline
+        const currentLine = prefix.split('\n').pop() || '';
+        const trimmedLine = line.trimStart();
+        
+        // If completion starts with operator/keyword, keep inline
+        if (/^(return|if|else|for|while|=|\+|-|\*|\/|&&|\|\||<<|>>)/.test(trimmedLine)) {
+          processedLines.push(' ' + trimmedLine);
+        } else if (currentLine.trim().length > 0 && trimmedLine.length > 0) {
+          // If current line has content, try inline first
+          processedLines.push(trimmedLine);
+        } else {
+          // Otherwise newline with proper indent
+          processedLines.push('\n' + baseIndent + trimmedLine);
+        }
+      } else {
+        // Middle of line - keep inline
+        processedLines.push(line.trimStart());
+      }
+    } else {
+      // Subsequent lines: preserve relative indentation
+      const trimmed = line.trimStart();
+      const originalIndent = line.length - trimmed.length;
+      
+      // Calculate indent: base + original relative indent
+      const indentSpaces = baseIndent + ' '.repeat(originalIndent);
+      processedLines.push('\n' + indentSpaces + trimmed);
+    }
   }
 
+  s = processedLines.join('');
   s = s.replace(/```+$/g, "");
   return s.trimEnd();
 }
