@@ -3,15 +3,49 @@ import * as crypto from 'crypto';
 
 const DEFAULT_STOPS_PY = ["\n\n", "\n\n```", "\n\n##", "\n\n# ", "\n\n\"\"\"", "\n\n'''"];
 const DEFAULT_STOPS_CPP = ["\n\n", "\n\n```", "\n\n//", "\n\n/*", "\n\n#endif"];
-const DEFAULT_TEMPERATURE = 0.3; // Increase for more creative suggestions
-const DEFAULT_MAX_TOKENS = 256; // Increase for longer completions
-const MAX_SIDE_CHARS = 6000; // Increase context window
+const DEFAULT_TEMPERATURE = 0.2; // Lower for more deterministic code
+const DEFAULT_MAX_TOKENS = 300; // Longer for multi-line completions
+const MAX_SIDE_CHARS = 8000; // More context
 
 // Generate anonymous user ID based on machine ID
 function getUserId(): string {
   const machineId = vscode.env.machineId;
   const hash = crypto.createHash('sha256').update(machineId).digest('hex');
   return hash.substring(0, 16); // Use first 16 chars for brevity
+}
+
+// Get indent character and size from editor config
+function detectIndentation(doc: vscode.TextDocument): { char: string, size: number } {
+  const config = vscode.workspace.getConfiguration('editor', doc.uri);
+  const insertSpaces = config.get<boolean>('insertSpaces', true);
+  const tabSize = config.get<number>('tabSize', 4);
+  
+  if (insertSpaces) {
+    return { char: ' ', size: tabSize };
+  }
+  return { char: '\t', size: 1 };
+}
+
+// Get current line's indentation string
+function getIndentFromLine(line: string): string {
+  const match = line.match(/^(\s*)/);
+  return match ? match[1] : '';
+}
+
+// Calculate indent level (number of indent units)
+function getIndentLevel(indent: string, indentChar: string, indentSize: number): number {
+  if (indentChar === '\t') {
+    return indent.split('\t').length - 1;
+  }
+  return Math.floor(indent.length / indentSize);
+}
+
+// Create indent string from level
+function makeIndent(level: number, indentChar: string, indentSize: number): string {
+  if (indentChar === '\t') {
+    return '\t'.repeat(level);
+  }
+  return ' '.repeat(level * indentSize);
 }
 
 function getPrefixSuffix(doc: vscode.TextDocument, pos: vscode.Position) {
@@ -169,10 +203,10 @@ async function fetchStreamCompletion(
   }
 }
 
-function getLineIndent(doc: vscode.TextDocument, pos: vscode.Position): string {
+// Get base indentation at cursor position
+function getBaseIndent(doc: vscode.TextDocument, pos: vscode.Position): string {
   const line = doc.lineAt(pos.line).text;
-  const m = line.match(/^(\s*)/);
-  return m ? m[1] : "";
+  return getIndentFromLine(line);
 }
 function headOverlapLen(a: string, b: string, cap = 120): number {
   const m = Math.min(a.length, b.length, cap);
@@ -241,67 +275,105 @@ function leftOverlapLenOnLine(prefix: string, suggestion: string, limit = 80): n
   return 0;
 }
 
-function tidyCompletion(raw: string, prefix: string, suffix: string, baseIndent: string, atEOL: boolean): string {
+function tidyCompletion(
+  raw: string, 
+  prefix: string, 
+  suffix: string, 
+  baseIndent: string,
+  indentInfo: { char: string, size: number },
+  atEOL: boolean
+): string {
+  // Step 1: Basic cleaning
   let s = raw.replace(/\r\n/g, "\n");
   s = stripMdFence(s);
-  s = s.replace(/^\n{3,}/, "\n\n");
-  s = dedupeConsecutiveLinesSoft(s);
-
-  // tránh lặp với phần sau con trỏ
+  s = s.trim();
+  
+  if (!s) return '';
+  
+  // Step 2: Remove overlap with suffix
   const ol = headOverlapLen(s, suffix);
-  if (ol > 0 && ol <= 3) {
+  if (ol > 0 && ol <= 5) {
     s = s.slice(ol);
   }
-
-  // Remove leading/trailing whitespace-only lines
-  s = s.replace(/^\n+/, '').replace(/\n+$/, '');
-
-  // Smart indentation for multi-line completions
+  
+  // Step 3: Deduplicate consecutive similar lines
+  s = dedupeConsecutiveLinesSoft(s);
+  
+  // Step 4: Determine if we need block indent (Python ':')
+  const needsBlock = needsBlockIndent(prefix);
+  const currentLine = prefix.split('\n').pop() || '';
+  const cursorAtLineStart = currentLine.trim().length === 0;
+  
+  // Step 5: Smart indentation line by line
   const lines = s.split('\n');
-  const processedLines: string[] = [];
-
+  const result: string[] = [];
+  
+  // Calculate base indent level
+  const baseLevel = getIndentLevel(baseIndent, indentInfo.char, indentInfo.size);
+  
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
+    const trimmed = line.trimStart();
+    
+    if (!trimmed) {
+      // Empty line - keep it
+      if (i > 0) result.push('\n');
+      continue;
+    }
+    
+    // Detect original indent of this line
+    const originalIndent = getIndentFromLine(line);
+    let originalLevel = getIndentLevel(originalIndent, ' ', 4); // Assume model uses 4 spaces
     
     if (i === 0) {
-      // First line: handle based on context
-      if (needsBlockIndent(prefix)) {
-        // Python block (after ':') - indent by 4 spaces
-        line = '    ' + line.trimStart();
-        processedLines.push('\n' + baseIndent + line);
+      // First line special handling
+      if (needsBlock) {
+        // After ':' - add one indent level
+        const newLevel = baseLevel + 1;
+        const newIndent = makeIndent(newLevel, indentInfo.char, indentInfo.size);
+        result.push('\n' + newIndent + trimmed);
       } else if (atEOL) {
-        // At end of line - can be inline or newline
-        const currentLine = prefix.split('\n').pop() || '';
-        const trimmedLine = line.trimStart();
-        
-        // If completion starts with operator/keyword, keep inline
-        if (/^(return|if|else|for|while|=|\+|-|\*|\/|&&|\|\||<<|>>)/.test(trimmedLine)) {
-          processedLines.push(' ' + trimmedLine);
-        } else if (currentLine.trim().length > 0 && trimmedLine.length > 0) {
-          // If current line has content, try inline first
-          processedLines.push(trimmedLine);
+        // At end of line
+        if (cursorAtLineStart) {
+          // Cursor at line start - use base indent
+          result.push(baseIndent + trimmed);
         } else {
-          // Otherwise newline with proper indent
-          processedLines.push('\n' + baseIndent + trimmedLine);
+          // Cursor mid-line - check if inline makes sense
+          const isOperatorOrKeyword = /^(return|if|else|for|while|class|def|int|void|public|private|=|\+|-|\*|\/|&&|\|\|)/.test(trimmed);
+          if (isOperatorOrKeyword && currentLine.length < 80) {
+            // Keep inline with space
+            result.push(' ' + trimmed);
+          } else {
+            // Go to new line with base indent
+            result.push('\n' + baseIndent + trimmed);
+          }
         }
       } else {
-        // Middle of line - keep inline
-        processedLines.push(line.trimStart());
+        // Middle of line - inline without space
+        result.push(trimmed);
       }
     } else {
-      // Subsequent lines: preserve relative indentation
-      const trimmed = line.trimStart();
-      const originalIndent = line.length - trimmed.length;
+      // Subsequent lines - preserve relative indentation
+      // Calculate relative indent from first line
+      const firstLineIndent = lines[0].length - lines[0].trimStart().length;
+      const relativeIndent = Math.max(0, (line.length - trimmed.length) - firstLineIndent);
+      const relativeLevel = Math.floor(relativeIndent / 4);
       
-      // Calculate indent: base + original relative indent
-      const indentSpaces = baseIndent + ' '.repeat(originalIndent);
-      processedLines.push('\n' + indentSpaces + trimmed);
+      // Apply to current base
+      const targetLevel = (needsBlock ? baseLevel + 1 : baseLevel) + relativeLevel;
+      const newIndent = makeIndent(targetLevel, indentInfo.char, indentInfo.size);
+      
+      result.push('\n' + newIndent + trimmed);
     }
   }
-
-  s = processedLines.join('');
-  s = s.replace(/```+$/g, "");
-  return s.trimEnd();
+  
+  let final = result.join('');
+  
+  // Step 6: Final cleanup
+  final = final.replace(/```+$/g, "");
+  final = final.replace(/\n{3,}/g, "\n\n"); // Max 2 newlines
+  
+  return final;
 }
 
 
@@ -427,9 +499,10 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
 
       if (!completion) return null;
 
-      const baseIndent = getLineIndent(document, position);
+      const baseIndent = getBaseIndent(document, position);
+      const indentInfo = detectIndentation(document);
       const atEOL = isAtLineEnd(document, position);
-      const post = tidyCompletion(completion, prefix, suffix, baseIndent, atEOL);
+      const post = tidyCompletion(completion, prefix, suffix, baseIndent, indentInfo, atEOL);
       if (!post) return null;
 
       let finalText = post;

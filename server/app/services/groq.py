@@ -17,104 +17,166 @@ logger = logging.getLogger(__name__)
 
 def build_prompt(req: CompleteRequest, user_style_hints: str = "") -> str:
     """
-    Build an enhanced prompt with clear instructions and few-shot examples.
-    Optionally includes personalized style hints based on user's coding patterns.
-    Optimized for Groq's fast inference.
-    Supports multiple languages including Python and C++.
+    Enhanced FIM (Fill-In-the-Middle) prompt for high-quality code completion.
+    Uses proven techniques from GitHub Copilot and CodeLlama.
     """
-    rules = [
-        f"You are an expert {req.language} coding assistant. Complete the code at <cursor/> position.",
-        "CRITICAL: Return ONLY executable code - NO markdown, NO backticks (```), NO explanations.",
-        "Output must be pure code that can be inserted directly into the file.",
-        "Analyze the prefix and suffix context carefully to understand the intent.",
-        "Maintain consistent indentation - match the last line's indentation level.",
-        "DO NOT repeat code that already exists in prefix or suffix.",
-        "Prefer concise, idiomatic solutions over verbose code.",
-    ]
     
-    # Language-specific rules
+    # Build context-aware system message
+    system_msg = f"""You are an expert {req.language} code completion engine. Your task is to complete code at the <FILL> position.
+
+CRITICAL RULES:
+1. Output ONLY the missing code - NO explanations, NO markdown, NO backticks
+2. Match the existing code style EXACTLY (indentation, naming, patterns)
+3. The completion must be syntactically correct and contextually appropriate
+4. DO NOT repeat code from <PREFIX> or <SUFFIX>
+5. Maintain proper indentation relative to surrounding code
+6. Prefer concise, idiomatic solutions"""
+
+    # Language-specific guidelines
     if req.language == "python":
-        rules.append("Python: After ':' indent by 4 spaces. Use snake_case for variables/functions.")
-        rules.append("Python: Prefer list comprehensions and built-in functions when appropriate.")
+        lang_rules = """
+Python Guidelines:
+- Use 4 spaces for indentation (never tabs)
+- Follow PEP 8 naming: snake_case for functions/variables, PascalCase for classes
+- After ':' (def, class, if, for, etc.), indent the next line by 4 spaces
+- Prefer list/dict comprehensions over loops when readable
+- Use type hints if the surrounding code uses them"""
     elif req.language in ["cpp", "c++", "c"]:
-        rules.append("C++: Include semicolons, proper braces, and type declarations.")
-        rules.append("C++: Use C++ idioms: auto, range-based for, STL containers.")
-        rules.append("C++: Prefer std:: prefix for standard library (unless 'using namespace std' in prefix).")
+        lang_rules = """
+C++ Guidelines:
+- Match existing indentation (usually 2 or 4 spaces, or tabs)
+- Include semicolons and proper braces {} placement
+- Use 'auto' for complex types when appropriate
+- Prefer range-based for loops: for (const auto& item : container)
+- Use std:: prefix unless 'using namespace std' is in <PREFIX>
+- Match existing naming convention (camelCase, snake_case, or PascalCase)"""
+    else:
+        lang_rules = ""
     
-    # Add user style hints if available
-    if user_style_hints:
-        rules.append(f"USER STYLE PREFERENCES: {user_style_hints}")
+    # Add user personalization
+    style_hints = f"\nUSER PREFERENCES: {user_style_hints}" if user_style_hints else ""
     
-    # Enhanced few-shot examples based on language
+    # Few-shot examples with proper FIM format
     if req.language in ["cpp", "c++", "c"]:
         examples = """
-EXAMPLE 1 - Inline completion (C++):
-<prefix>int factorial(int n) { return </prefix>
-<suffix>; }</suffix>
-OUTPUT: (n <= 1) ? 1 : n * factorial(n - 1)
-
-EXAMPLE 2 - Multi-line function (C++):
-<prefix>void printVector(const std::vector<int>& vec) {
-    </prefix>
-<suffix>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE 1 - Simple function completion:
+<PREFIX>
+int add(int a, int b) {
+    
+</PREFIX>
+<SUFFIX>
 }
 
-int main()</suffix>
-OUTPUT: for (const auto& val : vec) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
+int main() {
+</SUFFIX>
+<FILL>return a + b;</FILL>
 
-EXAMPLE 3 - Class method (C++):
-<prefix>class Calculator {
-public:
-    int add(int a, int b) {
-        </prefix>
-<suffix>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE 2 - Loop with proper indentation:
+<PREFIX>
+void printArray(int arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        
+</PREFIX>
+<SUFFIX>
     }
-};</suffix>
-OUTPUT: return a + b;
-"""
+}
+</SUFFIX>
+<FILL>std::cout << arr[i] << " ";</FILL>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE 3 - Class method:
+<PREFIX>
+class Calculator {
+public:
+    int multiply(int a, int b) {
+        
+</PREFIX>
+<SUFFIX>
+    }
+};
+</SUFFIX>
+<FILL>return a * b;</FILL>"""
     else:  # Python
         examples = """
-EXAMPLE 1 - Inline completion (Python):
-<prefix>def is_even(n): return </prefix>
-<suffix>
-
-def is_odd(n):</suffix>
-OUTPUT: n % 2 == 0
-
-EXAMPLE 2 - Multi-line function (Python):
-<prefix>def find_max(numbers):
-    </prefix>
-<suffix>
-
-result = find_max([1, 5, 3])</suffix>
-OUTPUT: if not numbers:
-        return None
-    return max(numbers)
-
-EXAMPLE 3 - List comprehension (Python):
-<prefix>fruits = ['apple', 'banana', 'cherry']
-uppercase = [</prefix>
-<suffix>]
-print(uppercase)</suffix>
-OUTPUT: f.upper() for f in fruits
-"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE 1 - Simple function completion:
+<PREFIX>
+def calculate_sum(numbers):
     
-    # Build final prompt with enhanced context
-    return (
-        f"You are an expert {req.language} code completion AI.\n"
-        "Task: Complete code at <cursor/> position using surrounding context.\n\n"
-        "STRICT RULES:\n" + "\n".join(f"- {r}" for r in rules) + "\n\n"
-        "EXAMPLES (learn the pattern):\n" + examples + "\n"
-        "═══════════════════════════════════════\n"
-        "NOW COMPLETE THIS CODE:\n\n"
-        f"<prefix>\n{req.prefix}\n</prefix>\n\n"
-        f"<suffix>\n{req.suffix}\n</suffix>\n\n"
-        "<cursor/>\n\n"
-        "YOUR COMPLETION (raw code only):\n"
-    )
+</PREFIX>
+<SUFFIX>
+
+result = calculate_sum([1, 2, 3])
+</SUFFIX>
+<FILL>if not numbers:
+        return 0
+    return sum(numbers)</FILL>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE 2 - Inline completion:
+<PREFIX>
+def is_even(n):
+    return 
+</PREFIX>
+<SUFFIX>
+
+def is_odd(n):
+</SUFFIX>
+<FILL>n % 2 == 0</FILL>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE 3 - List comprehension:
+<PREFIX>
+names = ['alice', 'bob', 'charlie']
+uppercase_names = [
+</PREFIX>
+<SUFFIX>
+]
+print(uppercase_names)
+</SUFFIX>
+<FILL>name.upper() for name in names</FILL>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE 4 - Multi-line with proper indent:
+<PREFIX>
+class UserManager:
+    def validate_user(self, user_id):
+        
+</PREFIX>
+<SUFFIX>
+        return is_valid
+    
+    def delete_user(self, user_id):
+</SUFFIX>
+<FILL>if not user_id:
+            return False
+        user = self.db.get_user(user_id)
+        is_valid = user is not None and user.active</FILL>"""
+    
+    # Build final prompt with FIM structure
+    prompt = f"""{system_msg}
+{lang_rules}{style_hints}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LEARN FROM THESE EXAMPLES:
+{examples}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NOW COMPLETE THIS CODE:
+
+<PREFIX>
+{req.prefix}
+</PREFIX>
+
+<SUFFIX>
+{req.suffix}
+</SUFFIX>
+
+<FILL>"""
+    
+    return prompt
 
 
 def call_groq_completion(
