@@ -48,6 +48,103 @@ function makeIndent(level: number, indentChar: string, indentSize: number): stri
   return ' '.repeat(level * indentSize);
 }
 
+// Detect if we're completing from a comment (comment-to-code feature)
+function detectCommentIntent(prefix: string, language: string): { isComment: boolean, instruction: string } {
+  const lines = prefix.split('\n');
+  const lastLine = lines[lines.length - 1] || '';
+  const prevLine = lines[lines.length - 2] || '';
+  
+  // Python comments
+  if (language === 'python') {
+    // Single line: # TODO: implement this function
+    if (lastLine.trim().startsWith('#')) {
+      return { isComment: true, instruction: lastLine.trim().substring(1).trim() };
+    }
+    // Docstring: """Calculate sum of numbers"""
+    const docMatch = prefix.match(/"""([^"]+)"""\s*$/s) || prefix.match(/'''([^']+)'''\s*$/s);
+    if (docMatch) {
+      return { isComment: true, instruction: docMatch[1].trim() };
+    }
+  }
+  
+  // C++ comments
+  if (language === 'cpp' || language === 'c') {
+    // Single line: // TODO: implement addition
+    if (lastLine.trim().startsWith('//')) {
+      return { isComment: true, instruction: lastLine.trim().substring(2).trim() };
+    }
+    // Multi-line: /* Calculate factorial */
+    const multiMatch = prefix.match(/\/\*([^*]+)\*\/\s*$/s);
+    if (multiMatch) {
+      return { isComment: true, instruction: multiMatch[1].trim() };
+    }
+  }
+  
+  return { isComment: false, instruction: '' };
+}
+
+// Detect missing imports from completion text
+function detectMissingImports(completion: string, prefix: string, language: string): string[] {
+  const imports: string[] = [];
+  
+  if (language === 'python') {
+    // Find usage patterns like: pd.DataFrame, np.array, os.path
+    const matches = completion.matchAll(/\b([a-z_]+)\.([A-Za-z_][A-Za-z0-9_]*)/g);
+    const usedModules = new Set<string>();
+    for (const match of matches) {
+      usedModules.add(match[1]);
+    }
+    
+    // Common module mappings
+    const commonImports: Record<string, string> = {
+      'pd': 'import pandas as pd',
+      'np': 'import numpy as np',
+      'plt': 'import matplotlib.pyplot as plt',
+      'os': 'import os',
+      'sys': 'import sys',
+      'json': 'import json',
+      're': 'import re',
+      'datetime': 'import datetime',
+      'math': 'import math',
+    };
+    
+    // Check which imports are missing
+    for (const mod of usedModules) {
+      const importStatement = commonImports[mod];
+      if (importStatement && !prefix.includes(importStatement)) {
+        imports.push(importStatement);
+      }
+    }
+    
+    // Check for direct function usage
+    if (/\bDataFrame\b/.test(completion) && !prefix.includes('pandas')) {
+      if (!imports.some(i => i.includes('pandas'))) {
+        imports.push('import pandas as pd');
+      }
+    }
+  }
+  
+  if (language === 'cpp' || language === 'c') {
+    // Detect std:: usage
+    if (/std::(vector|string|map|set|cout|cin)/.test(completion)) {
+      if (!prefix.includes('#include <iostream>') && /std::(cout|cin|endl)/.test(completion)) {
+        imports.push('#include <iostream>');
+      }
+      if (!prefix.includes('#include <vector>') && /std::vector/.test(completion)) {
+        imports.push('#include <vector>');
+      }
+      if (!prefix.includes('#include <string>') && /std::string/.test(completion)) {
+        imports.push('#include <string>');
+      }
+      if (!prefix.includes('#include <map>') && /std::map/.test(completion)) {
+        imports.push('#include <map>');
+      }
+    }
+  }
+  
+  return imports;
+}
+
 function getPrefixSuffix(doc: vscode.TextDocument, pos: vscode.Position) {
   const start = new vscode.Position(0, 0);
   const end = new vscode.Position(doc.lineCount - 1, doc.lineAt(doc.lineCount - 1).text.length);
@@ -481,16 +578,23 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
         langId = 'cpp';
       }
       
+      // Detect comment-to-code intent
+      const commentIntent = detectCommentIntent(prefix, langId);
+      
       // Choose appropriate stop sequences
       const stopSeqs = (langId === 'cpp' || langId === 'c') ? DEFAULT_STOPS_CPP : DEFAULT_STOPS_PY;
+      
+      // Adjust max_tokens if generating from comment (need more space)
+      const maxTokens = commentIntent.isComment ? 500 : DEFAULT_MAX_TOKENS;
       
       const requestBody = {
         prefix,
         suffix,
         language: langId,
         temperature: DEFAULT_TEMPERATURE,
-        max_tokens: DEFAULT_MAX_TOKENS,
+        max_tokens: maxTokens,
         stop: stopSeqs,
+        comment_instruction: commentIntent.isComment ? commentIntent.instruction : undefined,
       };
 
       const completion = this.enableStreaming
@@ -536,13 +640,26 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
       const end = position.translate(0, forwardReplace);
       const range = new vscode.Range(start, end);
 
-      const item = new vscode.InlineCompletionItem(finalText, range);
+      // Detect missing imports
+      const missingImports = detectMissingImports(finalText, prefix, langId);
+      
+      // If we have missing imports, prepend them with a comment
+      let textWithImports = finalText;
+      if (missingImports.length > 0 && commentIntent.isComment) {
+        // Show import suggestions as a comment in the completion
+        const importComment = langId === 'python' 
+          ? `# Add imports: ${missingImports.join(', ')}\n`
+          : `// Add imports: ${missingImports.join(', ')}\n`;
+        textWithImports = importComment + finalText;
+      }
+
+      const item = new vscode.InlineCompletionItem(textWithImports, range);
       
       // Track this completion for feedback
       const completionId = `${Date.now()}_${Math.random()}`;
       if (this.sendFeedback) {
         this.pendingCompletions.set(completionId, {
-          text: finalText,
+          text: textWithImports,
           prefix,
           timestamp: Date.now()
         });

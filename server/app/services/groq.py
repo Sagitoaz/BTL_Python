@@ -19,10 +19,25 @@ def build_prompt(req: CompleteRequest, user_style_hints: str = "") -> str:
     """
     Enhanced FIM (Fill-In-the-Middle) prompt for high-quality code completion.
     Uses proven techniques from GitHub Copilot and CodeLlama.
+    Supports comment-to-code generation.
     """
     
+    # Check if this is comment-to-code generation
+    is_comment_to_code = req.comment_instruction is not None and len(req.comment_instruction) > 0
+    
     # Build context-aware system message
-    system_msg = f"""You are an expert {req.language} code completion engine. Your task is to complete code at the <FILL> position.
+    if is_comment_to_code:
+        system_msg = f"""You are an expert {req.language} code generator. Your task is to generate code based on the comment instruction.
+
+CRITICAL RULES:
+1. Read the comment instruction carefully: "{req.comment_instruction}"
+2. Generate complete, working code that implements the instruction
+3. Output ONLY code - NO explanations, NO markdown, NO backticks
+4. The code must be syntactically correct and follow best practices
+5. Match the existing code style (indentation, naming patterns)
+6. Include necessary error handling and edge cases"""
+    else:
+        system_msg = f"""You are an expert {req.language} code completion engine. Your task is to complete code at the <FILL> position.
 
 CRITICAL RULES:
 1. Output ONLY the missing code - NO explanations, NO markdown, NO backticks

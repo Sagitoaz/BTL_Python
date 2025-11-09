@@ -18,6 +18,7 @@ class CompleteRequest(BaseModel):
     max_tokens: int = Field(DEFAULT_MAX_TOKENS, ge=1, le=512)
     temperature: float = Field(DEFAULT_TEMPERATURE, ge=0.0, le=1.0)
     stop: list[str] | None = None
+    comment_instruction: str | None = None  # For comment-to-code generation
 
     code_only: bool = True
 
