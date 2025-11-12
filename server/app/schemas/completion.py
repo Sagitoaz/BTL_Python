@@ -1,20 +1,40 @@
-from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional
+from typing import Literal
 
-DEFAULT_STOPS = ["\n\n```", "\n\n##"]
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+# Groq API only allows max 4 stop sequences
+DEFAULT_STOPS_PY = ["\n\n```", "\n\n##", '\n\n"""', "\n\n'''"]
+DEFAULT_STOPS_CPP = ["\n\n```", "\n\n//", "\n\n/*", "\n\n#endif"]
+DEFAULT_MAX_TOKENS = 128
+DEFAULT_TEMPERATURE = 0.2
+
 
 class CompleteRequest(BaseModel):
     prefix: str = ""
     suffix: str = ""
-    language: str = "python"
-    max_tokens: int = Field(256, ge=1, le=512)
-    temperature: float = Field(0.2, ge=0.0, le=1.0)
-    stop: Optional[List[str]] = None
+    language: Literal[
+        "python", "javascript", "typescript", "java", "c", "cpp", "c++", "go", "rust", "kotlin", ""
+    ] = "python"
+    max_tokens: int = Field(DEFAULT_MAX_TOKENS, ge=1, le=512)
+    temperature: float = Field(DEFAULT_TEMPERATURE, ge=0.0, le=1.0)
+    stop: list[str] | None = None
+    comment_instruction: str | None = None  # For comment-to-code generation
 
-    @field_validator("language")
+    code_only: bool = True
+
+    @field_validator("stop", mode="before")
     @classmethod
-    def normalize_lang(cls, v: str) -> str:
-        return (v or "").strip().lower()
+    def sanitize_stops(cls, v: list[str] | None):
+        if v is None:
+            return None
+        return [s for s in v if isinstance(s, str) and s]
+
+    @model_validator(mode="after")
+    def normalize_language(self):
+        if self.language:
+            self.language = self.language.lower()
+        return self
+
 
 class CompleteResponse(BaseModel):
     request_id: str

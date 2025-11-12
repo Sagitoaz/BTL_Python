@@ -1,0 +1,44 @@
+# Build output
+out/test/**
+out/**/*.map
+
+# Node modules (được bundle rồi)
+node_modules/
+
+# Server code (không cần trong extension, chỉ cần out/)
+server/**
+!server/requirements.txt
+
+# Development files
+.vscode-test/**
+.vscode/
+.gitignore
+.github/
+.idea/
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Test files
+**/*.test.*
+**/test/**
+
+# Documentation (giữ README và CHANGELOG)
+PUBLISHING_GUIDE.md
+
+# Source maps
+**/*.map
+
+# TypeScript source (đã compile sang out/)
+src/**
+tsconfig.json
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# Cache
+.cache/
+*.log

@@ -1,27 +1,59 @@
 from fastapi import APIRouter, HTTPException
-from app.core.http import SESSION
+import requests
+
 from app.core.config import settings
 
 router = APIRouter(prefix="", tags=["health"])
 
+
 @router.get("/health")
 def health():
-    try:
-        r = SESSION.get("http://127.0.0.1:11434/api/tags", timeout=10)
-        ok = r.status_code == 200
-        models = [m.get("name") for m in (r.json().get("models", []) if ok else [])]
+    """
+    Health check - verifies Groq API connectivity.
+    """
+    ok = True
+    models = []
     
-    except Exception:
-        ok, models = False, []
-    return {"status": "ok" if ok else "degraded", "model": settings.MODEL, "available_models": models}
+    if settings.GROQ_API_KEY:
+        try:
+            # Test Groq API connection
+            resp = requests.get(
+                "https://api.groq.com/openai/v1/models",
+                headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
+                timeout=5
+            )
+            if resp.ok:
+                data = resp.json()
+                models = [m.get("id") for m in data.get("data", [])]
+            else:
+                ok = False
+        except Exception:
+            ok = False
+    else:
+        ok = False
+    
+    return {
+        "status": "ok" if ok else "degraded",
+        "model": settings.GROQ_MODEL,
+        "available_models": models,
+    }
+
 
 @router.get("/models")
 def models():
+    """
+    List available Groq models.
+    """
+    if not settings.GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
+    
     try:
-        #print(f"{settings.OLLAMA_URL}")
-        
-        r = SESSION.get("http://127.0.0.1:11434/api/tags", timeout=10)
-        r.raise_for_status()
-        return r.json()
+        resp = requests.get(
+            "https://api.groq.com/openai/v1/models",
+            headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
+            timeout=5
+        )
+        resp.raise_for_status()
+        return resp.json()
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Cannot query models: {e}")
+        raise HTTPException(status_code=502, detail=f"Cannot query Groq models: {e}") from e

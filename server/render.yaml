@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: btl-python-server
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OLLAMA_URL
+        sync: false
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: MODEL
+        value: qwen2.5-coder:7b
+      - key: API_KEY
+        value: 5conmeo
+      - key: NUM_CTX
+        value: 4096
+      - key: POSTPROCESS_ENABLED
+        value: true
+      - key: ALLOW_ORIGINS
+        value: "*"
