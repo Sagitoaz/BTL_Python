@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.middleware.request_id import request_id_middleware
-from app.middleware.telemetry import TelemetryMiddleware
 from app.routers import completions, health, admin, feedback
 
 app = FastAPI(
@@ -26,9 +25,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Add telemetry middleware to track completions
-app.add_middleware(TelemetryMiddleware)
 
 app.include_router(health.router)
 app.include_router(completions.router)
