@@ -7,6 +7,7 @@ import os
 
 from app.core.security import require_api_key
 from app.middleware.telemetry import get_telemetry_collector
+from app.services.user_profiling import get_profiler
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -57,3 +58,47 @@ def download_telemetry_file(filename: str):
         media_type="application/octet-stream",
         filename=filename
     )
+
+
+@router.get("/profiles/list", dependencies=[Depends(require_api_key)])
+def list_user_profiles():
+    """List all user profiles"""
+    profiler = get_profiler()
+    profiles = []
+    
+    if profiler.data_dir.exists():
+        for profile_file in profiler.data_dir.glob("*.json"):
+            user_id = profile_file.stem
+            profile = profiler.load_profile(user_id)
+            profiles.append({
+                "user_id": user_id,
+                "total_samples": profile.coding_style.total_samples,
+                "accept_rate": profile.accept_rate,
+                "last_updated": profile.updated_at
+            })
+    
+    return {
+        "total_users": len(profiles),
+        "profiles": profiles
+    }
+
+
+@router.get("/profiles/{user_id}", dependencies=[Depends(require_api_key)])
+def get_user_profile(user_id: str):
+    """Get detailed profile for a specific user"""
+    profiler = get_profiler()
+    profile = profiler.load_profile(user_id)
+    
+    return profile.model_dump()
+
+
+@router.get("/profiles/{user_id}/style-hints", dependencies=[Depends(require_api_key)])
+def get_user_style_hints(user_id: str):
+    """Get style hints that would be sent to LLM for this user"""
+    profiler = get_profiler()
+    hints = profiler.get_style_hints(user_id)
+    
+    return {
+        "user_id": user_id,
+        "style_hints": hints
+    }
